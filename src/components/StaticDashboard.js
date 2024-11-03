@@ -1,71 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, getFirestore } from 'firebase/firestore';
-import { auth } from '../firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, query, getDocs, getFirestore } from 'firebase/firestore';
+import { useCompany } from '../context/CompanyContext'; 
+import BuyerStats from './BuyerStats';
+import BuyerAdCard from './BuyerAdCard';
+import dayjs from 'dayjs';
 
 const db = getFirestore();
 
 export default function StaticDashboard() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [company, setCompany] = useState(null);
+  const { company, loading: companyLoading } = useCompany(); 
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-      }
-    });
+    const fetchAds = async () => {
+      if (company) {
+        const adsQuery = query(collection(db, 'companies', company.id, 'ads'));
+        const adsSnapshot = await getDocs(adsQuery);
+        const adsData = [];
+        
+        adsSnapshot.forEach((adDoc) => {
+          const adData = adDoc.data();
+          const endDate = calculateEndDate(adData.createdAt, adData.duration);
 
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const fetchCompanyAndAds = async () => {
-      if (currentUser) {
-        const companyQuery = query(collection(db, 'companies'), where('adminUserId', '==', currentUser.uid));
-        const companySnapshot = await getDocs(companyQuery);
-        let companyData = null;
-        let companyId = null;
-
-        companySnapshot.forEach((doc) => {
-          companyData = doc.data();
-          companyId = doc.id;
+          // Filter out expired ads
+          if (isAdActive(endDate)) {
+            adsData.push({ id: adDoc.id, ...adData });
+          }
         });
 
-        if (!companyData) {
-          const userQuery = query(collection(db, 'companies'), where('Users', 'array-contains', currentUser.uid));
-          const userSnapshot = await getDocs(userQuery);
-
-          userSnapshot.forEach((doc) => {
-            companyData = doc.data();
-            companyId = doc.id;
-          });
-        }
-
-        if (companyData) {
-          setCompany({ ...companyData, id: companyId });
-          const adsQuery = query(collection(db, 'companies', companyId, 'ads'));
-          const adsSnapshot = await getDocs(adsQuery);
-          const adsData = [];
-          adsSnapshot.forEach((doc) => {
-            adsData.push({ id: doc.id, ...doc.data() });
-          });
-          setAds(adsData);
-        }
-
+        setAds(adsData);
         setLoading(false);
       }
     };
+    fetchAds();
+  }, [company]);
 
-    fetchCompanyAndAds();
-  }, [currentUser]);
+  const calculateEndDate = (createdAt, duration) => {
+    if (!createdAt || !duration) return null;
+    const date = new Date(createdAt.seconds * 1000);
+    date.setDate(date.getDate() + parseInt(duration, 10));
+    return date;
+  };
 
-  if (loading) {
+  const isAdActive = (endDate) => {
+    return endDate && dayjs(endDate).isAfter(dayjs());
+  };
+
+  const myAds = useMemo(() => ads.filter(ad => ad.userId === company?.adminUserId), [ads, company]);
+
+  if (companyLoading || loading) {
     return <div>Loading...</div>;
   }
 
@@ -73,18 +58,16 @@ export default function StaticDashboard() {
     return <div>No company found for this user.</div>;
   }
 
-  const myAds = ads.filter(ad => ad.userId === currentUser.uid);
-
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <Link to="/create-ad" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+        <h3 className="text-base leading-6 text-gray-900">Son 30 Gün</h3>
+        <Link to="/createad" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
           İlan Oluştur
         </Link>
       </div>
       <div className="mt-6">
-        <p><strong>Alıcı Onayı:</strong> {company.isBuyerConfirmed}</p>
+        <BuyerStats />
       </div>
 
       <div className="mt-6">
@@ -92,38 +75,7 @@ export default function StaticDashboard() {
         {myAds.length > 0 ? (
           <ul role="list" className="divide-y divide-gray-200 mt-4">
             {myAds.map(ad => (
-              <li key={ad.id} className="py-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      <Link to={`/ad-details/${ad.companyId}/${ad.id}`}>{ad.title}</Link>
-                    </h3>
-                    <p className="text-sm text-gray-500">{ad.content}</p>
-                    <div className="mt-2 flex space-x-1 text-sm text-gray-500">
-                      {ad.sectors.map((sector, index) => (
-                        <span key={index} className="bg-gray-200 rounded-full px-2 py-1">{sector}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`bg-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-100 text-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-800 rounded-full px-3 py-1 text-xs font-medium`}>
-                      {ad.adType}
-                    </span>
-                    <p className="mt-2 text-sm text-gray-500">{ad.createdAt.toDate().toLocaleDateString()}</p>
-                    <div className="mt-4 flex space-x-2">
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
-                        Kaldır
-                      </button>
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-gray-800 bg-yellow-100 hover:bg-yellow-200">
-                        İlanı Beklemeye Al
-                      </button>
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600">
-                        İlanı Düzenle
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </li>
+              <BuyerAdCard key={ad.id} ad={ad} />
             ))}
           </ul>
         ) : (

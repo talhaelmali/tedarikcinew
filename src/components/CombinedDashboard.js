@@ -1,72 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, getFirestore } from 'firebase/firestore';
-import { auth } from '../firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useCompany } from '../context/CompanyContext';
+import { collection, query, onSnapshot, getFirestore, orderBy } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import BuyerAdCard from './BuyerAdCard';
+import AdCard from './AdCard';
+import BuyerStats from './BuyerStats';
+import SalerStats from './SalerStats';
+import dayjs from 'dayjs';
 
 const db = getFirestore();
 
 const CombinedDashboard = () => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [company, setCompany] = useState(null);
+  const { company, loading: companyLoading } = useCompany();
   const [ads, setAds] = useState([]);
-  const [selectedTab, setSelectedTab] = useState('ilanlar');
   const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('ilanlar');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [adsPerPage] = useState(5);
+  const [totalAds, setTotalAds] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-      }
-    });
+    if (company) {
+      const unsubscribe = onSnapshot(query(collection(db, 'companies')), (snapshot) => {
+        const newAds = [];
 
-    return () => unsubscribe();
-  }, []);
+        snapshot.forEach((companyDoc) => {
+          const adsQuery = query(
+            collection(db, 'companies', companyDoc.id, 'ads'),
+            orderBy('createdAt', 'desc')
+          );
 
-  useEffect(() => {
-    const fetchCompanyAndAds = async () => {
-      if (currentUser) {
-        const companyQuery = query(collection(db, 'companies'), where('adminUserId', '==', currentUser.uid));
-        const companySnapshot = await getDocs(companyQuery);
-        let companyData = null;
-        let companyId = null;
+          onSnapshot(adsQuery, (adsSnapshot) => {
+            adsSnapshot.forEach((adDoc) => {
+              const adData = adDoc.data();
+              adData.id = adDoc.id;
 
-        companySnapshot.forEach((doc) => {
-          companyData = doc.data();
-          companyId = doc.id;
+              // Convert Firestore timestamp to Date
+              if (adData.createdAt && adData.createdAt.toDate) {
+                adData.createdAt = adData.createdAt.toDate();
+              }
+
+              // Calculate ad expiration date and filter out expired ads
+              const endDate = calculateEndDate(adData.createdAt, adData.duration);
+              if (!isAdActive(endDate)) {
+                return; // Skip expired ads
+              }
+
+              newAds.push({ id: adDoc.id, ...adData, companyId: companyDoc.id });
+            });
+
+            updateAds(newAds);
+          });
         });
+      });
 
-        if (!companyData) {
-          const userQuery = query(collection(db, 'companies'), where('Users', 'array-contains', currentUser.uid));
-          const userSnapshot = await getDocs(userQuery);
+      return () => unsubscribe();
+    }
+  }, [company, currentPage]);
 
-          userSnapshot.forEach((doc) => {
-            companyData = doc.data();
-            companyId = doc.id;
-          });
-        }
+  const calculateEndDate = (createdAt, duration) => {
+    if (!createdAt || !duration) return null;
+    const date = new Date(createdAt.getTime());
+    date.setDate(date.getDate() + parseInt(duration, 10));
+    return date;
+  };
 
-        if (companyData) {
-          setCompany({ ...companyData, id: companyId });
-          const adsQuery = query(collection(db, 'companies', companyId, 'ads'));
-          const adsSnapshot = await getDocs(adsQuery);
-          const adsData = [];
-          adsSnapshot.forEach((doc) => {
-            adsData.push({ id: doc.id, ...doc.data() });
-          });
-          setAds(adsData);
-        }
+  const isAdActive = (endDate) => {
+    return endDate && dayjs(endDate).isAfter(dayjs());
+  };
 
-        setLoading(false);
-      }
-    };
+  const updateAds = (adsData) => {
+    const sortedAds = adsData.sort((a, b) => b.createdAt - a.createdAt);
+    setTotalAds(sortedAds.length);
+    setAds(sortedAds.slice((currentPage - 1) * adsPerPage, currentPage * adsPerPage));
+    setLoading(false);
+  };
 
-    fetchCompanyAndAds();
-  }, [currentUser]);
+  const myAds = useMemo(() => ads.filter(ad => ad.companyId === company?.id), [ads, company]);
+  const otherAds = useMemo(() => ads.filter(ad => ad.companyId !== company?.id), [ads, company]);
 
-  if (loading) {
+  const totalPages = Math.ceil(totalAds / adsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  if (companyLoading || loading) {
     return <div>Loading...</div>;
   }
 
@@ -74,16 +93,17 @@ const CombinedDashboard = () => {
     return <div>No company found for this user.</div>;
   }
 
-  const myAds = ads.filter(ad => ad.userId === currentUser.uid);
-  const otherAds = ads.filter(ad => ad.userId !== currentUser.uid);
-
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <Link to="/create-ad" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+        <h3 className="text-base leading-6 text-gray-900">Son 30 Gün</h3>
+        <Link to="/createad" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
           İlan Oluştur
         </Link>
+      </div>
+      <div className="mt-6">
+        <BuyerStats />
+        <SalerStats />
       </div>
       <div className="mt-6">
         <div className="flex space-x-4">
@@ -103,79 +123,63 @@ const CombinedDashboard = () => {
 
         {selectedTab === 'ilanlar' && (
           <ul role="list" className="divide-y divide-gray-200 mt-4">
-            {otherAds.map(ad => (
-              <li key={ad.id} className="py-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      <Link to={`/ad-details/${ad.companyId}/${ad.id}`}>{ad.title}</Link>
-                    </h3>
-                    <p className="text-sm text-gray-500">{ad.content}</p>
-                    <div className="mt-2 flex space-x-1 text-sm text-gray-500">
-                      {ad.sectors.map((sector, index) => (
-                        <span key={index} className="bg-gray-200 rounded-full px-2 py-1">{sector}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`bg-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-100 text-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-800 rounded-full px-3 py-1 text-xs font-medium`}>
-                      {ad.adType}
-                    </span>
-                    <p className="mt-2 text-sm text-gray-500">{ad.createdAt.toDate().toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </li>
-            ))}
+            {otherAds.length > 0 ? (
+              otherAds.map(ad => (
+                <AdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
+              ))
+            ) : (
+              <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+            )}
           </ul>
         )}
 
         {selectedTab === 'ilanlarim' && (
           <ul role="list" className="divide-y divide-gray-200 mt-4">
-            {myAds.map(ad => (
-              <li key={ad.id} className="py-4">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      <Link to={`/ad-details/${ad.companyId}/${ad.id}`}>{ad.title}</Link>
-                    </h3>
-                    <p className="text-sm text-gray-500">{ad.content}</p>
-                    <div className="mt-2 flex space-x-1 text-sm text-gray-500">
-                      {ad.sectors.map((sector, index) => (
-                        <span key={index} className="bg-gray-200 rounded-full px-2 py-1">{sector}</span>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                        Gelen Teklifler ({ad.offersCount || 0})
-                      </button>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`bg-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-100 text-${ad.adType === 'Kapalı Usül Teklif' ? 'yellow' : 'green'}-800 rounded-full px-3 py-1 text-xs font-medium`}>
-                      {ad.adType}
-                    </span>
-                    <p className="mt-2 text-sm text-gray-500">{ad.createdAt.toDate().toLocaleDateString()}</p>
-                    <div className="mt-4 flex space-x-2">
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
-                        Kaldır
-                      </button>
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-gray-800 bg-yellow-100 hover:bg-yellow-200">
-                        İlanı Beklemeye Al
-                      </button>
-                      <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600">
-                        İlanı Düzenle
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
+            {myAds.length > 0 ? (
+              myAds.map(ad => (
+                <BuyerAdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
+              ))
+            ) : (
+              <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+            )}
           </ul>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-4">
+          <div className="-mt-px flex w-0 flex-1">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              className={`inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+              disabled={currentPage === 1}
+            >
+              Önceki
+            </button>
+          </div>
+          <div className="hidden md:-mt-px md:flex">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => handlePageChange(i + 1)}
+                className={`inline-flex items-center border-t-2 ${currentPage === i + 1 ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} px-4 pt-4 text-sm font-medium`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <div className="-mt-px flex w-0 flex-1 justify-end">
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              className={`inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+              disabled={currentPage === totalPages}
+            >
+              Sonraki
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 };

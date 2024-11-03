@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { auth } from '../firebaseConfig';
+import { doc, getDoc, getFirestore, collection, getDocs, setDoc } from 'firebase/firestore';
+import { auth, storage } from '../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const db = getFirestore();
 
@@ -19,7 +20,10 @@ export default function CreateCompany() {
     postalCode: '',
     isBuyer: false,
     isSeller: false,
-    sectors: [], // Empty sectors array
+    sectors: [],
+    taxDocumentURL: '',
+    phone: '', // Kullanıcının telefon numarası
+    email: '', // Kullanıcının e-posta adresi
   });
 
   const steps = [
@@ -29,26 +33,83 @@ export default function CreateCompany() {
   ];
 
   const [currentUser, setCurrentUser] = useState(null);
+  const [file, setFile] = useState(null); // Dosya yükleme işlemi için state
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
+
+        // Kullanıcı bilgilerini Firestore'dan alma
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setFormData((prevFormData) => ({
+            ...prevFormData,
+            phone: userData.phone || '', // Firestore'dan telefon numarasını çekiyoruz
+            email: userData.email || user.email, // Firestore'dan email'i çekiyoruz, eğer yoksa auth'tan alıyoruz
+          }));
+        }
+
+        // Şirket ile ilişkilendirilmiş olup olmadığını kontrol et
+        const companiesRef = collection(db, 'companies');
+        const querySnapshot = await getDocs(companiesRef);
+        let isAdminOfCompany = false;
+
+        querySnapshot.forEach((doc) => {
+          if (doc.data().adminUserId === user.uid) {
+            isAdminOfCompany = true;
+          }
+        });
+
+        if (isAdminOfCompany) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Zaten Şirket İlişkilendirilmiş',
+            text: 'Bu kullanıcı zaten bir şirket ile ilişkilendirilmiş. Dashboard sayfasına yönlendiriliyorsunuz.',
+          }).then(() => {
+            navigate('/dashboard');
+          });
+        }
       } else {
         setCurrentUser(null);
       }
     });
 
     return () => unsubscribe();
-  }, []);
-
+  }, [navigate]);
+  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFile(null);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles[0]) {
+      handleFileChange({ target: { files: droppedFiles } });
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
   };
 
   const handleSubmit = async (e) => {
@@ -62,17 +123,32 @@ export default function CreateCompany() {
       return;
     }
 
-    const companyId = uuidv4(); // Generate a unique ID
+    const companyId = uuidv4(); // Benzersiz bir ID oluşturuluyor
 
     try {
+      // Dosyayı Firebase Storage'a yükleyin ve URL'yi alın
+      let taxDocumentURL = '';
+      if (file) {
+        const storageRef = ref(storage, `taxDocuments/${companyId}/${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        taxDocumentURL = await getDownloadURL(snapshot.ref);
+      }
+
+      // Şirket verilerini Firestore'a kaydedin
       const companyRef = doc(db, 'companies', companyId);
       await setDoc(companyRef, {
-        ...formData,
+        ...formData, // formData'daki tüm verileri kaydet
+        taxDocumentURL,
         isBuyerConfirmed: 'pending',
         isSellerConfirmed: 'pending',
-        paymentStatus: false, // Default payment status
+        paymentStatus: false, // Varsayılan ödeme durumu
         adminUserId: currentUser ? currentUser.uid : null,
+        teamMembers: { [currentUser.uid]: 'admin' }, // Admin kullanıcı
+        taxDocumentVerified: false,
+        signatureCircularVerified: false,
+        activityCertificateVerified: false,
       });
+
       Swal.fire({
         icon: 'success',
         title: 'Başarılı',
@@ -88,6 +164,8 @@ export default function CreateCompany() {
       });
     }
   };
+
+  
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -188,21 +266,85 @@ export default function CreateCompany() {
           </div>
         </div>
         <div className="mt-6">
-          <label htmlFor="taxDocument" className="block text-sm font-medium leading-6 text-gray-900">Vergi Levhası</label>
-          <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6">
-            <div className="space-y-1 text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                <path d="M28 8H20a2 2 0 00-2 2v28a2 2 0 002 2h8a2 2 0 002-2V10a2 2 0 00-2-2zm-2 32H22V12h4v28zM12 6h24v4H12V6zm0 32h24v4H12v-4z" />
-              </svg>
-              <div className="flex text-sm text-gray-600">
-                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500">
-                  <span>Bir dosya yükleyin veya sürükleyin</span>
-                  <input id="file-upload" name="file-upload" required type="file" className="sr-only" />
-                </label>
-                <p className="pl-1">PNG, JPG, GIF up to 10MB</p>
-              </div>
-            </div>
-          </div>
+          <label htmlFor="taxDocument" className="block text-sm font-medium leading-6 text-gray-900">Firma Evrakları</label>
+          <label htmlFor="taxDocument" className="block text-xs font-medium leading-6 text-gray-900">
+  Lütfen belirtilen belgeleri tek bir PDF halinde birleştirerek yükleyin:
+</label>
+<ul className="list-disc pl-5 text-xs text-gray-900">
+  <li>Yetkili kimlik (Ön ve Arka Yüzü)</li>
+  <li>İmza Sirküleri</li>
+  <li>Faaliyet Belgesi</li>
+  <li>Firma adı ve IBAN bilgisi</li>
+  <li>Ticaret Sicil Gazetesi</li>
+  <li>Tek ortaklı şirketlerde ilgili kişinin ikametgah belgesi</li>
+  <li>Birden fazla ortaklı şirketlerde paya sahip kişilerin kimlik ve ikametgah belgeleri</li>
+  <li>Üyelik sözleşmesinin kaşe ve imzalı şekilde olması</li>
+</ul>
+          <a href="https://firebasestorage.googleapis.com/v0/b/ihale-6cb24.appspot.com/o/CADERK%20LTD.%20S%CC%A7TI%CC%87.-%20U%CC%88YELI%CC%87K%20SO%CC%88ZLES%CC%A7ME.docx?alt=media&token=a8c54436-3d1a-4da6-80f2-b6be64457732" className='block text-xs font-medium leading-6 text-blue-900 underline'>  Üyelik sözleşmesini indirmek için tıklayın. </a>  
+          <div
+  className="mt-1 flex justify-center rounded-md border-2 border-dashed border-gray-300 px-6 pt-5 pb-6"
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={handleDrop}
+>
+  <div className="space-y-1 text-center">
+    <svg
+      className="mx-auto h-12 w-12 text-gray-400"
+      stroke="currentColor"
+      fill="none"
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+    >
+      <path d="M28 8H20a2 2 0 00-2 2v28a2 2 0 002 2h8a2 2 0 002-2V10a2 2 0 00-2-2zm-2 32H22V12h4v28zM12 6h24v4H12V6zm0 32h24v4H12v-4z" />
+    </svg>
+    {file ? (
+      <div className="mt-2 flex items-center justify-center">
+        <svg
+          className="w-6 h-6 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M4 4v16c0 1.105.895 2 2 2h8.764a2 2 0 001.414-.586l4.586-4.586A2 2 0 0022 14.764V8c0-1.105-.895-2-2-2H6c-1.105 0-2 .895-2 2z"
+          />
+        </svg>
+        <span className="ml-2 text-sm text-gray-500">{file.name}</span>
+        <button
+          type="button"
+          onClick={handleRemoveFile}
+          className="ml-4 text-red-500"
+        >
+          Kaldır
+        </button>
+      </div>
+    ) : (
+      <div>
+        <div className="flex text-sm text-gray-600">
+          <label
+            htmlFor="file-upload"
+            className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-sky-500"
+          >
+            <span>Bir dosya yükleyin veya sürükleyin</span>
+            <input
+              id="file-upload"
+              name="file-upload"
+              type="file"
+              required
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+          </label>
+          <p className="pl-1">PNG, JPG, GIF en fazla 10MB</p>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
         </div>
         <div className="px-4 py-3 text-right sm:px-6">
           <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-[#0D408F] py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
