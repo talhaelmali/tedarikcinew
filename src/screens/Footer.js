@@ -73,7 +73,7 @@ export default function Footer() {
           { name: 'Hakkımızda', href: '/aboutus' },
           { name: 'Blog', href: '/blogs' },
           { name: 'Fiyatlandırma', href: '#' },
-          { name: 'Duyurular', href: '#' },
+          { name: 'Duyurular', href: '/duyurular' },
       
       
         ],

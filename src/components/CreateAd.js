@@ -148,13 +148,13 @@ export default function CreateAd() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.adType) {
-      setFormError('Lütfen bir teklif tipi seçiniz.'); // Seçim yapılmadıysa hata mesajı göster
+      setFormError('Lütfen bir teklif tipi seçiniz.');
       Swal.fire({
         icon: 'error',
         title: 'Hata',
         text: 'Lütfen bir teklif tipi seçiniz.',
       });
-      return; // Form gönderimini durdur
+      return;
     }
   
     if (!company || !company.isBuyer || company.isBuyerConfirmed !== 'yes') {
@@ -184,6 +184,12 @@ export default function CreateAd() {
       const cleanedMaxBid = formData.maxBid.replace(/[.]/g, '');
       const cleanedQuantity = formData.quantity.replace(/[.]/g, '');
   
+      // `createdAt`'e `duration` gün ekleyerek `endDate` hesapla
+      const createdAt = new Date();
+      const duration = parseInt(formData.duration);
+      const endDate = new Date(createdAt);
+      endDate.setDate(endDate.getDate() + duration);
+  
       const adData = {
         ...formData,
         maxBid: cleanedMaxBid,
@@ -193,6 +199,7 @@ export default function CreateAd() {
         companyId: company.id,
         dueDate: dueDateWithTime,
         createdAt: serverTimestamp(),
+        endDate: endDate, // endDate verisini ekleyin
       };
   
       await addDoc(collection(db, 'companies', company.id, 'ads'), adData);
@@ -212,6 +219,7 @@ export default function CreateAd() {
       });
     }
   };
+  
   
 
   if (loading) {
@@ -432,12 +440,12 @@ export default function CreateAd() {
                   id="adType2"
                   name="adType"
                   type="radio"
-                  value="Açık Usül İhale"
-                  checked={formData.adType === 'Açık Usül İhale'}
+                  value="Açık Usül Teklif"
+                  checked={formData.adType === 'Açık Usül Teklif'}
                   onChange={handleChange}
                   className="h-4 w-4 text-sky-600 border-gray-300"
                 />
-                <label htmlFor="adType2" className="ml-3 block text-sm font-medium text-gray-700">Açık Usül İhale</label>
+                <label htmlFor="adType2" className="ml-3 block text-sm font-medium text-gray-700">Açık Usül Teklif</label>
               </div>
             </div>
           </div>

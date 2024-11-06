@@ -14,6 +14,7 @@ import FeaturedBlogs from '../components/FeaturedBlogs';
 import Header from '../components/Header';
 import useLogo from '../hooks/useLogo'; // useLogo hook'unu import edin
 import Footer from './Footer';
+import FeaturedAnnouncements from '../components/FeaturedAnnouncements';
 
 
 
@@ -246,6 +247,8 @@ export default function Home() {
     </section>
 
     <FeaturedBlogs/>
+    <FeaturedAnnouncements/>
+
 
 
 

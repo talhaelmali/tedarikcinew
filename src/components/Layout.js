@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline';
-import { collection, query, where, getDocs, getFirestore, doc, updateDoc, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, getFirestore, doc, updateDoc, limit, onSnapshot, orderBy } from 'firebase/firestore';
 import useLogo from '../hooks/useLogo';
 import { useCompany } from '../context/CompanyContext';
 import { auth } from '../firebaseConfig';
@@ -105,46 +105,49 @@ export default function Layout({ children, currentItem }) {
     return () => unsubscribe();
   }, []);
 
-  // Fetch notifications
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (company?.id) {
-        const db = getFirestore();
-        
-        // Sadece 3 bildirim çekelim
-        const q = query(
-          collection(db, 'notifications'),
-          where('companyId', '==', company.id),
-          where('read', '==', false),
-          limit(3) // En fazla 3 bildirim çekiyoruz
-        );
-        
-        const querySnapshot = await getDocs(q);
-        const notificationsData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
 
-        setNotifications(notificationsData);
+useEffect(() => {
+  if (company?.id) {
+    const db = getFirestore();
 
-        // Toplam okunmamış bildirim sayısını sorgulayalım
-        const allNotificationsQuery = query(
-          collection(db, 'notifications'),
-          where('companyId', '==', company.id),
-          where('read', '==', false)
-        );
-        const allNotificationsSnapshot = await getDocs(allNotificationsQuery);
+    // Bildirimleri timestamp'e göre en yeni en üstte olacak şekilde sıralayalım
+    const q = query(
+      collection(db, 'notifications'),
+      where('companyId', '==', company.id),
+      where('read', '==', false),
+      orderBy('timestamp', 'desc'), // Bildirimleri en yeniye göre sıralar
+      limit(3) // En fazla 3 bildirim çekiyoruz
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const notificationsData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setNotifications(notificationsData);
+
+      // Toplam okunmamış bildirim sayısını sorgulayan anlık güncelleme
+      const allNotificationsQuery = query(
+        collection(db, 'notifications'),
+        where('companyId', '==', company.id),
+        where('read', '==', false)
+      );
+
+      onSnapshot(allNotificationsQuery, (allNotificationsSnapshot) => {
         const allNotifications = allNotificationsSnapshot.docs.length;
 
         // Toplam okunmamış - ilk 3 bildirim = kalan bildirim sayısı
         setRemainingNotifications(allNotifications - notificationsData.length);
-
         setUnreadCount(allNotifications);
-      }
-    };
+      });
+    });
 
-    fetchNotifications();
-  }, [company]);
+    return () => unsubscribe();
+  }
+}, [company]);
+
+
 
   // Handle notification click
   const handleNotificationClick = async (notification) => {
@@ -309,22 +312,28 @@ export default function Layout({ children, currentItem }) {
   ) : (
     <>
       {notifications.map((notification) => (
-        <Menu.Item key={notification.id}>
-          {({ active }) => (
-            <div
-              onClick={() => handleNotificationClick(notification)}
-              className={classNames(
-                active ? 'bg-gray-100' : '',
-                'block px-4 py-2 text-sm text-gray-700 border-b border-gray-200 cursor-pointer'
-              )}
-            >
-              <div>{notification.message}</div>
-              <div className="text-xs text-gray-500">
-                {new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
-              </div>
-            </div>
-          )}
-        </Menu.Item>
+     <Menu.Item key={notification.id}>
+     {({ active }) => (
+       <div
+         onClick={() => handleNotificationClick(notification)}
+         className={classNames(
+           active ? 'bg-gray-100' : '',
+           'block px-4 py-2 text-sm text-gray-700 border-b border-gray-200 cursor-pointer truncate'
+         )}
+         style={{ maxWidth: '100%' }} // Metni bir satırla sınırla
+       >
+         <div className="truncate">
+           {notification.message.length > 50
+             ? `${notification.message.slice(0, 50)}...`
+             : notification.message}
+         </div>
+         <div className="text-xs text-gray-500">
+           {new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
+         </div>
+       </div>
+     )}
+   </Menu.Item>
+   
       ))}
 
       {/* Eğer remainingNotifications varsa "+XXX daha" şeklinde göster */}

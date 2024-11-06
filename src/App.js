@@ -14,6 +14,7 @@ import Cookies from './screens/Cookies';
 import Privacy from './screens/Privacy';
 import Terms from './screens/Terms';
 import Blogs from './screens/Blogs';
+import Announcements from './components/Announcements';
  // LanguageProvider'ı import et
 
 
@@ -37,6 +38,7 @@ const BuyerAds = React.lazy(() => import('./screens/BuyerAds'));
 const ChatPage = React.lazy(() => import('./components/ChatPage'));
 const SellerApprovedAds = React.lazy(() => import('./screens/SellerApprovedAds'));
 const BlogDetail = React.lazy(() => import('./screens/BlogDetail'));
+const AnnouncementDetail = React.lazy(() => import('./screens/AnnouncementDetail'));
 const Orders = React.lazy(() => import('./components/Orders'));
 const SellerOrders = React.lazy(() => import('./components/SellerOrders'));
 const Profile = React.lazy(() => import('./components/Settings/Profile'));
@@ -210,6 +212,8 @@ const App = () => {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/blogs" element={<Blogs />} />
+            <Route path="/duyurular" element={<Announcements />} />
+
 
 
 
@@ -289,6 +293,7 @@ const App = () => {
             <Route path="/teammembers" element={<Layout currentItem="Siparişler"><TeamMembers /></Layout>} />
             <Route path="/ad-details/:companyId/:adId/bid" element={<Layout currentItem="Anasayfa"><BidForm /></Layout>} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
+            <Route path="/announcements/:id" element={<AnnouncementDetail />} />
             <Route path="/contactus" element={<ContactUs />} />
             <Route path="/apitest" element={<Apitest />} />
           </Routes>
