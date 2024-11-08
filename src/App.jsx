@@ -291,16 +291,7 @@ const App = () => {
     </PrivateRoute>
   }
 />           
-<Route
-  path="/sectors/:companyId"
-  element={
-    <PrivateRoute> 
-      <Layout currentItem="">
-        <Sectors />
-      </Layout>
-    </PrivateRoute>
-  }
-/>
+
 
 
             <Route
@@ -324,12 +315,12 @@ const App = () => {
     </PrivateRoute>
   }
 />  
+<Route path="/sectors/:companyId" element={<Layout><Sectors /></Layout>} />
+
             <Route path="/chat/:orderId/:companyId1/:companyId2" element={<Layout><ChatPage /></Layout>} />
             <Route path="/profile" element={<Layout currentItem="Siparişler"><Profile /></Layout>} />
             <Route path="/my-company" element={<Layout currentItem="Siparişler"><CompanyDetails /></Layout>} />
             <Route path="/teammembers" element={<Layout currentItem="Siparişler"><TeamMembers /></Layout>} />
-
-
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/announcements/:id" element={<AnnouncementDetail />} />
             <Route path="/contactus" element={<ContactUs />} />

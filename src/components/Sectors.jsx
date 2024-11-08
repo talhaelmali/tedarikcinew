@@ -12,10 +12,10 @@ export default function Sectors() {
   const navigate = useNavigate();
   const [selectedSectors, setSelectedSectors] = useState([]);
   const [sectorOptions, setSectorOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Tracks overall component loading
   const [fetchError, setFetchError] = useState(null);
-  const auth = getAuth();
   const [user, setUser] = useState(null);
+  const auth = getAuth();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -27,56 +27,44 @@ export default function Sectors() {
           icon: 'error',
           title: 'Yetkisiz Giriş',
           text: 'Giriş yapmanız gerekiyor.',
-        }).then(() => {
-          navigate('/pricing');
-        });
+        }).then(() => navigate('/pricing'));
       }
     });
 
     return () => unsubscribe();
-  }, [companyId, navigate, auth]);
+  }, [auth, companyId, navigate]);
 
   const checkUserPermissionAndExistingSectors = async (user) => {
     try {
-      const userId = user.uid;
       const companyRef = doc(db, 'companies', companyId);
       const companyDoc = await getDoc(companyRef);
-  
+
       if (companyDoc.exists()) {
         const companyData = companyDoc.data();
-  
-        if (companyData.adminUserId !== userId) {
+
+        if (companyData.adminUserId !== user.uid) {
           Swal.fire({
             icon: 'error',
             title: 'Yetkisiz Giriş',
             text: 'Bu şirketi düzenlemeye yetkiniz yok. Eğer bir hata olduğunu düşünüyorsanız lütfen bir destek talebi oluşturun.',
-          }).then(() => {
-            navigate('/dashboard');
-          });
+          }).then(() => navigate('/dashboard'));
           return;
         }
-  
+
+        // Redirect if sectors exist
         if (companyData.sectors && companyData.sectors.length > 0) {
           Swal.fire({
             icon: 'warning',
             title: 'Uyarı',
             text: 'Sektör seçimi daha önce yapılmış, firma ayarlarından sektörleri güncelleyebilirsiniz.',
-          }).then(() => {
-            navigate('/dashboard');
-          });
-        } else {
-          fetchSectors();
+          }).then(() => navigate('/dashboard'));
+          return;
         }
-      } else {
-        throw new Error('Şirket bilgileri bulunamadı.');
       }
+      fetchSectors();
     } catch (error) {
       console.error('Error checking user permissions or existing sectors:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Hata',
-        text: 'Kontrol sırasında bir hata oluştu.',
-      });
+      setFetchError('Hata: Şirket verilerine erişilemiyor.');
       navigate('/dashboard');
     }
   };
@@ -85,16 +73,15 @@ export default function Sectors() {
     try {
       const q = query(collection(db, 'sectors'), where('type', '==', 'Alt Sektör'));
       const querySnapshot = await getDocs(q);
-      const fetchedSectors = querySnapshot.docs.map(doc => doc.data().name);
-      
+      const fetchedSectors = querySnapshot.docs.map((doc) => doc.data().name);
       const uniqueSectors = [...new Set(fetchedSectors)].sort((a, b) => a.localeCompare(b));
-      
-      const options = uniqueSectors.map(sector => ({
-        value: sector,
-        label: sector,
-      }));
-      
-      setSectorOptions(options);
+
+      setSectorOptions(
+        uniqueSectors.map((sector) => ({
+          value: sector,
+          label: sector,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching sectors:', error);
       setFetchError('Sektör bilgileri alınırken bir hata oluştu.');
@@ -104,7 +91,7 @@ export default function Sectors() {
   };
 
   const handleSelectChange = (selectedOptions) => {
-    setSelectedSectors(selectedOptions.map(option => option.value));
+    setSelectedSectors(selectedOptions.map((option) => option.value));
   };
 
   const handleSave = async () => {
@@ -126,9 +113,7 @@ export default function Sectors() {
         icon: 'success',
         title: 'Başarılı',
         text: 'Sektörler başarıyla kaydedildi.',
-      }).then(() => {
-        navigate('/success');
-      });
+      }).then(() => navigate('/success'));
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -148,7 +133,9 @@ export default function Sectors() {
         <>
           <div>
             <h2 className="text-lg font-medium leading-6 text-gray-900">Sektör Seç</h2>
-            <p className="mt-1 text-sm text-gray-500">Firmanızın ilanlarla eşleşebilmesi için sektör seçiniz. En fazla <strong>3 sektör</strong> seçilebilir.</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Firmanızın ilanlarla eşleşebilmesi için sektör seçiniz. En fazla <strong>3 sektör</strong> seçilebilir.
+            </p>
           </div>
           <div className="mt-6">
             <div className="sm:col-span-4">
@@ -162,13 +149,13 @@ export default function Sectors() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm"
                 classNamePrefix="select"
                 onChange={handleSelectChange}
-                value={sectorOptions.filter(option => selectedSectors.includes(option.value))}
+                value={sectorOptions.filter((option) => selectedSectors.includes(option.value))}
                 menuPortalTarget={document.body}
                 menuPlacement="auto"
                 menuPosition="fixed"
                 maxMenuHeight={150}
                 styles={{
-                  menuPortal: base => ({ ...base, zIndex: 9999 }),
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                 }}
               />
             </div>
