@@ -45,8 +45,6 @@ const Profile = React.lazy(() => import('./components/Settings/Profile'));
 const Support = React.lazy(() => import('./components/Support'));
 const CompanyDetails = React.lazy(() => import('./components/Settings/CompanyDetails'));
 const TeamMembers = React.lazy(() => import('./components/Settings/TeamMembers'));
-const CheckEmailVerification = React.lazy(() => import('./screens/checkEmailVerification'));
-const Pricing = React.lazy(() => import('./components/Pricing'));
 const Notifications = React.lazy(() => import('./screens/Notifications'));
 
 // Logout component
@@ -79,14 +77,21 @@ const Logout = () => {
 };
 
 // PrivateRoute component for protecting routes based on company profile
-const PrivateRoute = ({ children, requiredRole }) => {
+const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
   const { company, loading } = useCompany(); // Access company data and loading state
   const navigate = useNavigate();
+  const auth = getAuth();
+  const user = auth.currentUser;
 
   useEffect(() => {
     if (loading) return; // Şirket bilgileri yüklenirken bekle
 
-    // Şirket mevcut değilse /createcompany sayfasına yönlendir
+    // Eğer giriş yapılmış ancak company bilgisi yoksa ve allowNoCompany true ise erişime izin ver
+    if (allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
+      return;
+    }
+
+    // Eğer şirket bilgisi yoksa /createcompany sayfasına yönlendir
     if (!company || Object.keys(company).length === 0) {
       Swal.fire({
         icon: 'info',
@@ -112,44 +117,22 @@ const PrivateRoute = ({ children, requiredRole }) => {
         text: 'Satıcı profiliniz henüz onaylanmamış.',
       }).then(() => navigate('/dashboard'));
     }
-  }, [company, requiredRole, navigate, loading]);
+  }, [company, requiredRole, navigate, loading, user, allowNoCompany]);
 
   // Şirket mevcutsa ve rol uygun ise bileşeni render et
   if (!loading && company && ((requiredRole === 'buyer' && company.isBuyerConfirmed === 'yes') || (requiredRole === 'seller' && company.isSellerConfirmed === 'yes'))) {
     return children;
   }
 
+  // allowNoCompany durumunda ve user mevcutsa children'ı render et
+  if (allowNoCompany && user && !company) {
+    return children;
+  }
+
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
 
-// Apitest Component
-const Apitest = () => {
-  const [responseData, setResponseData] = useState('');
 
-  useEffect(() => {
-    // API çağrısı
-    fetch(`${API_URL}/test`)
-      .then((response) => response.text())
-      .then((data) => {
-        setResponseData(data);
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Hata!',
-          text: 'API isteği yapılırken bir hata oluştu.',
-        });
-      });
-  }, []);
-
-  return (
-    <div>
-      <h1>API Test Sayfası</h1>
-      <p>{responseData ? responseData : 'Veri yükleniyor...'}</p>
-    </div>
-  );
-};
 
 const App = () => {
   const [seoData, setSeoData] = useState({
@@ -253,16 +236,16 @@ const App = () => {
                 </PrivateRoute>
               }
             />
-            <Route
-              path="/createAd"
-              element={
-                <PrivateRoute requiredRole="seller">
-                  <Layout currentItem="Anasayfa">
-                    <CreateAd />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+     <Route
+  path="/createAd"
+  element={
+    <PrivateRoute requiredRole="buyer">
+      <Layout currentItem="Anasayfa">
+        <CreateAd />
+      </Layout>
+    </PrivateRoute>
+  }
+/>
             <Route
   path="/ads"
   element={
@@ -274,28 +257,50 @@ const App = () => {
   }
 />
 
-
-            {/* Mixed Roles - Both Buyer and Seller */}
             <Route path="/dashboard" element={<Layout currentItem="Anasayfa"><Dashboard /></Layout>} />
             <Route path="/support" element={<Layout currentItem="Destek"><Support /></Layout>} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/createcompany" element={<Layout currentItem="Anasayfa"><CreateCompany /></Layout>} />
-            <Route path="/updateemail" element={<Layout currentItem="Destek"><UpdateEmail /></Layout>} />
-            <Route path="/ce" element={<Layout currentItem="Destek"><CheckEmailVerification /></Layout>} />
-            <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+            <Route
+  path="/createcompany"
+  element={
+    <PrivateRoute allowNoCompany>
+      <Layout currentItem="Anasayfa">
+        <CreateCompany />
+      </Layout>
+    </PrivateRoute>
+  }
+/>            <Route path="/updateemail" element={<Layout currentItem="Destek"><UpdateEmail /></Layout>} />
             <Route path="/sectors/:companyId" element={<Layout currentItem="Anasayfa"><Sectors /></Layout>} />
             <Route path="/success" element={<Layout currentItem="Anasayfa"><SuccessRegister /></Layout>} />
-            <Route path="/ad-details/:companyId/:adId" element={<Layout currentItem="Anasayfa"><AdDetails /></Layout>} />
+            <Route
+  path="/ad-details/:companyId/:adId/bid"
+  element={
+    <PrivateRoute requiredRole="seller">
+      <Layout currentItem="Anasayfa">
+        <BidForm />
+      </Layout>
+    </PrivateRoute>
+  }
+/>
             <Route path="/notifications" element={<Layout currentItem=""><Notifications /></Layout>} />
             <Route path="/chat/:orderId/:companyId1/:companyId2" element={<Layout><ChatPage /></Layout>} />
             <Route path="/profile" element={<Layout currentItem="Siparişler"><Profile /></Layout>} />
             <Route path="/my-company" element={<Layout currentItem="Siparişler"><CompanyDetails /></Layout>} />
             <Route path="/teammembers" element={<Layout currentItem="Siparişler"><TeamMembers /></Layout>} />
-            <Route path="/ad-details/:companyId/:adId/bid" element={<Layout currentItem="Anasayfa"><BidForm /></Layout>} />
+            <Route
+  path="/ad-details/:companyId/:adId/bid"
+  element={
+    <PrivateRoute requiredRole="seller">
+      <Layout currentItem="Anasayfa">
+        <BidForm />
+      </Layout>
+    </PrivateRoute>
+  }
+/>
+
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/announcements/:id" element={<AnnouncementDetail />} />
             <Route path="/contactus" element={<ContactUs />} />
-            <Route path="/apitest" element={<Apitest />} />
           </Routes>
         </Suspense>
       </Router>

@@ -3,6 +3,7 @@ import { collection, doc, query, where, getFirestore, addDoc, getDoc, getDocs } 
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { auth } from '../firebaseConfig';
+import dayjs from 'dayjs';
 
 const db = getFirestore();
 
@@ -38,12 +39,35 @@ const BidForm = () => {
         const adDoc = await getDoc(doc(db, 'companies', companyId, 'ads', adId));
         if (adDoc.exists()) {
           setAdData(adDoc.data());
+
+          // İlan süresi dolmuşsa kullanıcıyı /ads sayfasına yönlendir
+          const adEndDate = adDoc.data().endDate;
+          if (adEndDate && dayjs().isAfter(dayjs(adEndDate.seconds * 1000))) {
+            Swal.fire({
+              title: 'İlan Süresi Doldu',
+              text: 'Bu ilan süresi dolduğu için teklif verilemez.',
+              icon: 'info',
+              confirmButtonText: 'Tamam'
+            }).then(() => navigate('/ads'));
+            return;
+          }
         }
 
         // Şirket verilerini çek
         const companyDoc = await getDoc(doc(db, 'companies', companyId));
         if (companyDoc.exists()) {
           setCompanyData(companyDoc.data());
+          
+          // Kullanıcı ilan sahibi ise /myads sayfasına yönlendir
+          if (companyDoc.data().adminUserId === currentUser?.uid) {
+            Swal.fire({
+              title: 'Kendi İlanınıza Teklif Veremezsiniz',
+              text: 'Bu ilan sizin tarafınızdan oluşturulmuş. Kendi ilanınıza teklif veremezsiniz.',
+              icon: 'error',
+              confirmButtonText: 'Tamam'
+            }).then(() => navigate('/myads'));
+            return;
+          }
         }
 
         // Teklif verilerini çek
@@ -93,7 +117,7 @@ const BidForm = () => {
     };
 
     fetchAdAndCompany();
-  }, [companyId, adId, currentUser]);
+  }, [companyId, adId, currentUser, navigate]);
 
   // En düşük teklifi bul
   const getLowestBid = (bids) => {
@@ -199,8 +223,6 @@ const BidForm = () => {
     }
   };
   
-  
-
   if (loading) {
     return <div>Loading...</div>;
   }

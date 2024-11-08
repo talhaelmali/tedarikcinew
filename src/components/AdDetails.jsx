@@ -41,6 +41,22 @@ const AdDetails = () => {
       fetchFollowingStatus(); // Şirket yüklendiğinde takip durumu kontrol ediliyor.
     }
   }, [company, adId]);
+
+  useEffect(() => {
+    if (!loading && adData) {
+      const isExpired = adData.endDate && dayjs().isAfter(dayjs(adData.endDate.seconds * 1000));
+      
+      if (isExpired && adOwnerCompany?.id !== company?.id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'İlan Süresi Doldu',
+          text: 'Bu ilan süresi dolduğu için artık görüntülenemiyor.',
+        }).then(() => {
+          navigate('/ads');
+        });
+      }
+    }
+  }, [adData, loading, adOwnerCompany, company, navigate]);
   
   const fetchFollowingStatus = () => {
     if (company?.FollowedAds && company.FollowedAds.includes(adId)) {

@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { collection, addDoc, query, orderBy, onSnapshot, getFirestore, doc, getDoc, getDocs } from 'firebase/firestore';
 import { PaperAirplaneIcon, StarIcon as FilledStarIcon, StarIcon as OutlineStarIcon } from '@heroicons/react/24/solid';
 import OrderDetailsModal from './OrderDetailsModal';  // Sipariş Detayları Modal'ını ekliyoruz
-import { useCompany } from '../context/CompanyContext'; // Import the context
+import { useCompany } from '../context/CompanyContext';
+import Swal from 'sweetalert2';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const db = getFirestore();
 
@@ -22,28 +24,34 @@ const ChatPage = () => {
   const chatId = `${orderId}_${companyId1}_${companyId2}`;
   let otherCompanyId = '';
 
-  // Check if the user has access to this chat
+  // Kullanıcının giriş yapıp yapmadığını ve yetkisini kontrol eden useEffect
   useEffect(() => {
-    if (!currentUserCompany) return;
-
-    const checkAuthorization = () => {
-      const userCompanyId = currentUserCompany.id;
-
-      // Determine the other company ID
-      if (userCompanyId === companyId1) {
-        otherCompanyId = companyId2;  // Other company is companyId2
-      } else if (userCompanyId === companyId2) {
-        otherCompanyId = companyId1;  // Other company is companyId1
+    const auth = getAuth();
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Kullanıcı giriş yapmamışsa, login sayfasına yönlendirin
+        navigate('/login');
+      } else if (!currentUserCompany) {
+        return; // Şirket verisi yüklenene kadar bekleyin
       } else {
-        navigate('/');  // Redirect if the user is not part of the chat
-        return;
+        const userCompanyId = currentUserCompany.id;
+
+        if (userCompanyId === companyId1 || userCompanyId === companyId2) {
+          setAuthorized(true); // Kullanıcı yetkili
+          otherCompanyId = userCompanyId === companyId1 ? companyId2 : companyId1; // Diğer şirket ID'si
+          fetchCompanyInfo(otherCompanyId); // Diğer şirketin bilgilerini al
+        } else {
+          // Yetkisizse dashboard'a yönlendir
+          Swal.fire({
+            icon: 'error',
+            title: 'Erişim Engellendi',
+            text: 'Bu sohbete erişim yetkiniz bulunmamaktadır.',
+          }).then(() => navigate('/dashboard'));
+        }
       }
+    });
 
-      setAuthorized(true);
-      fetchCompanyInfo(otherCompanyId);  // Fetch other company's info
-    };
-
-    checkAuthorization();
+    return () => unsubscribeAuth();
   }, [currentUserCompany, navigate, companyId1, companyId2]);
 
   // Fetch the other company's info
@@ -114,8 +122,7 @@ const ChatPage = () => {
   // Handle sending a new message
   const handleSendMessage = async () => {
     if (newMessage.trim() === '') return;
-  
-    // Save the message in Firestore
+
     await addDoc(collection(db, 'chats', chatId, 'messages'), {
       chatId,
       userId: currentUserCompany.id,
@@ -123,25 +130,21 @@ const ChatPage = () => {
       message: newMessage,
       createdAt: new Date(),
     });
-  
-    // Determine the recipient company's ID
+
     let recipientCompanyId = currentUserCompany.id === companyId1 ? companyId2 : companyId1;
-  
-    // Send a notification to the recipient company
     const notificationMessage = `Yeni bir mesaj aldınız: ${newMessage.substring(0, 20)}...`;
-  
+
     await addDoc(collection(db, 'notifications'), {
       companyId: recipientCompanyId,
       message: notificationMessage,
       route: `/chat/${orderId}/${companyId1}/${companyId2}`,
       read: false,
       timestamp: new Date(),
-      type: "Mesaj"  // Adding the default type as "Mesaj"
+      type: "Mesaj"
     });
-  
+
     setNewMessage('');  // Clear the input field
   };
-  
 
   const handleOpenOrderDetailsModal = () => {
     setIsOrderDetailsModalOpen(true);

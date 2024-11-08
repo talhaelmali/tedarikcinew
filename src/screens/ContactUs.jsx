@@ -5,6 +5,8 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import Swal from 'sweetalert2';
+import Header from '../components/Header';
+import Footer from './Footer';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -207,358 +209,173 @@ export default function ContactUs() {
   
 
   return (
-    <div className="bg-white">
-      <header>
-        <Popover className="relative bg-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-between p-6 md:justify-start md:space-x-10 lg:px-8">
-            <div className="flex justify-start lg:w-0 lg:flex-1">
-              <a href="#">
-                <span className="sr-only">Your Company</span>
-                <img
-                  className="h-8 w-auto sm:h-10"
-                  src="https://firebasestorage.googleapis.com/v0/b/ihale-6cb24.appspot.com/o/Logo.png?alt=media&token=7d143957-6812-4174-bf78-723d103e75a4"
-                  alt=""
-                />
-              </a>
-            </div>
-            <div className="-my-2 -mr-2 md:hidden">
-              <PopoverButton className="relative inline-flex items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-                <span className="absolute -inset-0.5" />
-                <span className="sr-only">Open menu</span>
-                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-              </PopoverButton>
-            </div>
-            <PopoverGroup as="nav" className="hidden space-x-10 md:flex">
-              <a href="/" className="text-base font-medium text-gray-500 hover:text-gray-900">
-                Anasayfa
-              </a>
-              <a href="/aboutus" className="text-base font-medium text-gray-500 hover:text-gray-900">
-                Hakkımızda
-              </a>
-              <a href="/contactus" className="text-base font-medium text-gray-500 hover:text-gray-900">
-                İletişim
-              </a>
-            </PopoverGroup>
-            <div className="hidden items-center justify-end md:flex md:flex-1 lg:w-0">
-              <a href="/login" className="whitespace-nowrap text-base font-medium text-gray-500 hover:text-gray-900">
-                Giriş Yap
-              </a>
-              <a
-                href="/register"
-                className="ml-8 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent bg-[#1CB9C8]  bg-origin-border px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-[#1BA2AE]"
-              >
-                Kayıt Ol
-              </a>
-            </div>
-          </div>
+<>
+<Header/>
+<div className="bg-white">
+ 
 
-          <PopoverPanel
-            transition
-            focus
-            className="absolute inset-x-0 top-0 z-30 origin-top-right transform p-2 transition data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-100 data-[enter]:ease-out data-[leave]:ease-in md:hidden"
-          >
-            <div className="divide-y-2 divide-gray-50 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5">
-              <div className="px-5 pb-6 pt-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <img
-                      className="h-8 w-auto"
-                      src="https://firebasestorage.googleapis.com/v0/b/ihale-6cb24.appspot.com/o/Logo.png?alt=media&token=7d143957-6812-4174-bf78-723d103e75a4"
-                      alt="Your Company"
-                    />
-                  </div>
-                  <div className="-mr-2">
-                    <PopoverButton className="relative inline-flex items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-                      <span className="absolute -inset-0.5" />
-                      <span className="sr-only">Close menu</span>
-                      <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                    </PopoverButton>
-                  </div>
-                </div>
-                <div className="mt-6"></div>
-              </div>
-              <div className="px-5 py-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <a href="#" className="text-base font-medium text-gray-900 hover:text-gray-700">
-                    Pricing
-                  </a>
-                  <a href="#" className="text-base font-medium text-gray-900 hover:text-gray-700">
-                    Partners
-                  </a>
-                  <a href="#" className="text-base font-medium text-gray-900 hover:text-gray-700">
-                    Company
-                  </a>
-                </div>
-                <div className="mt-6">
-                  <a
-                    href="#"
-                    className="flex w-full items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-purple-600 to-indigo-600 bg-origin-border px-4 py-2 text-base font-medium text-white shadow-sm hover:from-purple-700 hover:to-indigo-700"
-                  >
-                    Sign up
-                  </a>
-                  <p className="mt-6 text-center text-base font-medium text-gray-500">
-                    Existing customer?
-                    <a href="#" className="text-gray-900">
-                      Sign in
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </PopoverPanel>
-        </Popover>
-      </header>
-
-      <main className="isolate">
-        <div className="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
-          <div className="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]" aria-hidden="true"></div>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">İletişim</h2>
-            <p className="mt-2 text-lg leading-8 text-gray-600">
-              Nullam risus blandit ac aliquam justo ipsum. Quam mauris volutpat massa dictumst amet. Sapien tortor lacus arcu.
-            </p>
-          </div>
-          <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-xl sm:mt-20">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-              <div>
-                <label htmlFor="first-name" className="block text-sm font-semibold leading-6 text-gray-900">
-                  İsim
-                </label>
-                <div className="mt-2.5">
-                  <input
-                    type="text"
-                    name="firstName"
-                    id="first-name"
-                    autoComplete="given-name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="last-name" className="block text-sm font-semibold leading-6 text-gray-900">
-                  Soyisim
-                </label>
-                <div className="mt-2.5">
-                  <input
-                    type="text"
-                    name="lastName"
-                    id="last-name"
-                    autoComplete="family-name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="company" className="block text-sm font-semibold leading-6 text-gray-900">
-                  Şirket
-                </label>
-                <div className="mt-2.5">
-                  <input
-                    type="text"
-                    name="company"
-                    id="company"
-                    autoComplete="organization"
-                    value={formData.company}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="email" className="block text-sm font-semibold leading-6 text-gray-900">
-                  E Posta
-                </label>
-                <div className="mt-2.5">
-                  <input
-                    type="email"
-                    name="email"
-                    id="email"
-                    autoComplete="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="phone-number" className="block text-sm font-semibold leading-6 text-gray-900">
-                  Telefon Numarası
-                </label>
-                <div className="relative mt-2.5">
-                  <div className="absolute inset-y-0 left-0 flex items-center">
-                    <label htmlFor="country" className="sr-only">
-                      Country
-                    </label>
-                    <select
-                      id="country"
-                      name="country"
-                      className="h-full rounded-md border-0 bg-transparent bg-none py-0 pl-4 pr-9 text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
-                    >
-                      <option>TR</option>
-                      <option>US</option>
-                      <option>EU</option>
-                    </select>
-                    <ChevronDownIcon className="pointer-events-none absolute right-3 top-0 h-full w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    id="phone-number"
-                    autoComplete="tel"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 pl-20 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label htmlFor="message" className="block text-sm font-semibold leading-6 text-gray-900">
-                  Mesaj
-                </label>
-                <div className="mt-2.5">
-                  <textarea
-                    name="message"
-                    id="message"
-                    rows={4}
-                    value={formData.message}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    defaultValue={''}
-                  />
-                </div>
-              </div>
-              <Field as="div" className="flex gap-x-4 sm:col-span-2">
-                <div className="flex h-6 items-center">
-                  <Switch
-                    checked={agreed}
-                    onChange={setAgreed}
-                    className={classNames(
-                      agreed ? 'bg-indigo-600' : 'bg-gray-200',
-                      'flex w-8 flex-none cursor-pointer rounded-full p-px ring-1 ring-inset ring-gray-900/5 transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-                    )}
-                  >
-                    <span className="sr-only">Agree to policies</span>
-                    <span
-                      aria-hidden="true"
-                      className={classNames(
-                        agreed ? 'translate-x-3.5' : 'translate-x-0',
-                        'h-4 w-4 transform rounded-full bg-white shadow-sm ring-1 ring-gray-900/5 transition duration-200 ease-in-out'
-                      )}
-                    />
-                  </Switch>
-                </div>
-                <Label className="text-sm leading-6 text-gray-600">
-                  Bunu seçerek{' '}
-                  <a href="#" className="font-semibold text-indigo-600 pr-1">
-                    Gizlilik Politikası ve Çerez Politikasını
-                  </a>
-                  kabul etmiş olursunuz.
-                </Label>
-              </Field>
-            </div>
-            <div className="mt-10">
-              <button
-                type="submit"
-                className="block w-full rounded-md bg-[#0D408F] px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Gönder
-              </button>
-            </div>
-          </form>
-        </div>
-      </main>
-      <footer className="bg-[#151735]" aria-labelledby="footer-heading">
-        <div className="mx-auto max-w-7xl px-6 pb-8 pt-20 sm:pt-24 lg:px-8 lg:pt-32">
-          <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-            <div className="grid grid-cols-2 gap-8 xl:col-span-2">
-              <div className="md:grid md:grid-cols-2 md:gap-8">
-                <div>
-                  <h3 className="text-sm font-semibold leading-6 text-[#1CB9C8]">E-TEDARİKÇİ</h3>
-                  <ul role="list" className="mt-6 space-y-4">
-                    {navigation.solutions.map((item) => (
-                      <li key={item.name}>
-                        <a href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                          {item.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="mt-10 md:mt-0">
-                  <h3 className="text-sm font-semibold leading-6 text-[#1CB9C8]">SÖZLEŞMELER</h3>
-                  <ul role="list" className="mt-6 space-y-4">
-                    {navigation.support.map((item) => (
-                      <li key={item.name}>
-                        <a href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                          {item.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              <div className="md:grid md:grid-cols-2 md:gap-8">
-                <div>
-                  <h3 className="text-sm font-semibold leading-6 text-[#1CB9C8]">DESTEK</h3>
-                  <ul role="list" className="mt-6 space-y-4">
-                    {navigation.company.map((item) => (
-                      <li key={item.name}>
-                        <a href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white">
-                          {item.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div className="mt-10 xl:mt-0">
-              <h3 className="text-sm font-semibold leading-6 text-[#1CB9C8]">HABER BÜLTENİMİZE ABONE OLUN</h3>
-              <p className="mt-2 text-sm leading-6 text-gray-300">
-                En son haberler, makaleler ve kaynaklar haftalık olarak gelen kutunuza gönderilir.
-              </p>
-              <form className="mt-6 sm:flex sm:max-w-md">
-                <input
-                  type="email"
-                  name="email-address"
-                  id="email-address"
-                  autoComplete="email"
-                  required
-                  className="w-full min-w-0 appearance-none rounded-md border-0 bg-white/5 px-3 py-1.5 text-base text-white shadow-sm ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:w-64 sm:text-sm sm:leading-6 xl:w-full"
-                  placeholder="E-posta adresinizi girin"
-                />
-                <div className="mt-4 sm:ml-4 sm:mt-0 sm:flex-shrink-0">
-                  <button
-                    type="submit"
-                    className="flex w-full items-center justify-center rounded-md bg-[#1CB9C8] px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                  >
-                    Abone Ol
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div className="mt-16 border-t border-white/10 pt-8 sm:mt-20 md:flex md:items-center md:justify-between lg:mt-24">
-            <div className="flex space-x-6 md:order-2">
-              {navigation.social.map((item) => (
-                item.href && (
-                  <a key={item.name} href={item.href} className="text-gray-500 hover:text-gray-400">
-                    <span className="sr-only">{item.name}</span>
-                    <item.icon className="h-6 w-6" aria-hidden="true" />
-                  </a>
-                )
-              ))}
-            </div>
-            <p className="mt-8 text-xs leading-5 text-gray-400 md:order-1 md:mt-0">
-              &copy; 2024 E-Tedarikçi | Tüm Haklar Saklıdır
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+ <main className="isolate">
+   <div className="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
+     <div className="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]" aria-hidden="true"></div>
+     <div className="mx-auto max-w-2xl text-center">
+       <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">İletişim</h2>
+ 
+     </div>
+     <form onSubmit={handleSubmit} className="mx-auto mt-16 max-w-xl sm:mt-20">
+       <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+         <div>
+           <label htmlFor="first-name" className="block text-sm font-semibold leading-6 text-gray-900">
+             İsim
+           </label>
+           <div className="mt-2.5">
+             <input
+               type="text"
+               name="firstName"
+               id="first-name"
+               autoComplete="given-name"
+               value={formData.firstName}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+             />
+           </div>
+         </div>
+         <div>
+           <label htmlFor="last-name" className="block text-sm font-semibold leading-6 text-gray-900">
+             Soyisim
+           </label>
+           <div className="mt-2.5">
+             <input
+               type="text"
+               name="lastName"
+               id="last-name"
+               autoComplete="family-name"
+               value={formData.lastName}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+             />
+           </div>
+         </div>
+         <div className="sm:col-span-2">
+           <label htmlFor="company" className="block text-sm font-semibold leading-6 text-gray-900">
+             Şirket
+           </label>
+           <div className="mt-2.5">
+             <input
+               type="text"
+               name="company"
+               id="company"
+               autoComplete="organization"
+               value={formData.company}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+             />
+           </div>
+         </div>
+         <div className="sm:col-span-2">
+           <label htmlFor="email" className="block text-sm font-semibold leading-6 text-gray-900">
+             E Posta
+           </label>
+           <div className="mt-2.5">
+             <input
+               type="email"
+               name="email"
+               id="email"
+               autoComplete="email"
+               value={formData.email}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+             />
+           </div>
+         </div>
+         <div className="sm:col-span-2">
+           <label htmlFor="phone-number" className="block text-sm font-semibold leading-6 text-gray-900">
+             Telefon Numarası
+           </label>
+           <div className="relative mt-2.5">
+             <div className="absolute inset-y-0 left-0 flex items-center">
+               <label htmlFor="country" className="sr-only">
+                 Country
+               </label>
+               <select
+                 id="country"
+                 name="country"
+                 className="h-full rounded-md border-0 bg-transparent bg-none py-0 pl-4 pr-9 text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+               >
+                 <option>TR</option>
+                 <option>US</option>
+                 <option>EU</option>
+               </select>
+               <ChevronDownIcon className="pointer-events-none absolute right-3 top-0 h-full w-5 text-gray-400" aria-hidden="true" />
+             </div>
+             <input
+               type="tel"
+               name="phoneNumber"
+               id="phone-number"
+               autoComplete="tel"
+               value={formData.phoneNumber}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 pl-20 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+             />
+           </div>
+         </div>
+         <div className="sm:col-span-2">
+           <label htmlFor="message" className="block text-sm font-semibold leading-6 text-gray-900">
+             Mesaj
+           </label>
+           <div className="mt-2.5">
+             <textarea
+               name="message"
+               id="message"
+               rows={4}
+               value={formData.message}
+               onChange={handleChange}
+               className="block w-full rounded-md border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+               defaultValue={''}
+             />
+           </div>
+         </div>
+         <Field as="div" className="flex gap-x-4 sm:col-span-2">
+           <div className="flex h-6 items-center">
+             <Switch
+               checked={agreed}
+               onChange={setAgreed}
+               className={classNames(
+                 agreed ? 'bg-indigo-600' : 'bg-gray-200',
+                 'flex w-8 flex-none cursor-pointer rounded-full p-px ring-1 ring-inset ring-gray-900/5 transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+               )}
+             >
+               <span className="sr-only">Agree to policies</span>
+               <span
+                 aria-hidden="true"
+                 className={classNames(
+                   agreed ? 'translate-x-3.5' : 'translate-x-0',
+                   'h-4 w-4 transform rounded-full bg-white shadow-sm ring-1 ring-gray-900/5 transition duration-200 ease-in-out'
+                 )}
+               />
+             </Switch>
+           </div>
+           <Label className="text-sm leading-6 text-gray-600">
+             Bunu seçerek{' '}
+             <a href="#" className="font-semibold text-indigo-600 pr-1">
+               Gizlilik Politikası ve Çerez Politikasını
+             </a>
+             kabul etmiş olursunuz.
+           </Label>
+         </Field>
+       </div>
+       <div className="mt-10">
+         <button
+           type="submit"
+           className="block w-full rounded-md bg-[#0D408F] px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+         >
+           Gönder
+         </button>
+       </div>
+     </form>
+   </div>
+ </main>
+<Footer/>
+</div>
+</>
   )
 }
