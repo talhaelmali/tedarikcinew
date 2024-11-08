@@ -300,19 +300,37 @@ const App = () => {
     </PrivateRoute>
   }
 />           
-            <Route path="/sectors/:companyId" element={<Layout currentItem="Anasayfa"><Sectors /></Layout>} />
-            <Route path="/success" element={<Layout currentItem="Anasayfa"><SuccessRegister /></Layout>} />
-
             <Route
+  path="/sectors/:companyId"
+  element={
+    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+      <Layout currentItem="">
+        <Sectors />
+      </Layout>
+    </PrivateRoute>
+  }
+/>  
+            <Route
+  path="/success"
+  element={
+    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+      <Layout currentItem="">
+        <SuccessRegister />
+      </Layout>
+    </PrivateRoute>
+  }
+/>  
+
+<Route
   path="/notifications"
   element={
-    <PrivateRoute>
+    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
       <Layout currentItem="">
         <Notifications />
       </Layout>
     </PrivateRoute>
   }
-/>
+/>  
             <Route path="/chat/:orderId/:companyId1/:companyId2" element={<Layout><ChatPage /></Layout>} />
             <Route path="/profile" element={<Layout currentItem="Siparişler"><Profile /></Layout>} />
             <Route path="/my-company" element={<Layout currentItem="Siparişler"><CompanyDetails /></Layout>} />
