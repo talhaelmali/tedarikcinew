@@ -76,7 +76,6 @@ const Logout = () => {
   return null;
 };
 
-// PrivateRoute component for protecting routes based on company profile
 const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
   const { company, loading } = useCompany(); // Access company data and loading state
   const navigate = useNavigate();
@@ -86,18 +85,28 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
   useEffect(() => {
     if (loading) return; // Şirket bilgileri yüklenirken bekle
 
+    // Kullanıcı giriş yapmamışsa /login sayfasına yönlendir
+    if (!user) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Giriş Gerekli',
+        text: 'Bu sayfaya erişmek için lütfen giriş yapın.',
+      }).then(() => navigate('/login'));
+      return;
+    }
+
     // Eğer giriş yapılmış ancak company bilgisi yoksa ve allowNoCompany true ise erişime izin ver
     if (allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
       return;
     }
 
-    // Eğer şirket bilgisi yoksa /createcompany sayfasına yönlendir
-    if (!company || Object.keys(company).length === 0) {
+    // Eğer company mevcutsa ve sayfa /createcompany ise, kullanıcıyı /dashboard'a yönlendir
+    if (allowNoCompany && user && company) {
       Swal.fire({
         icon: 'info',
-        title: 'Şirket Bilgisi Gerekli',
-        text: 'Lütfen önce şirket bilgilerinizi oluşturun.',
-      }).then(() => navigate('/createcompany'));
+        title: 'Şirket Bilgisi Mevcut',
+        text: 'Zaten bir şirketiniz var, ana sayfaya yönlendiriliyorsunuz.',
+      }).then(() => navigate('/dashboard'));
       return;
     }
 
@@ -131,6 +140,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
@@ -196,14 +206,16 @@ const App = () => {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/duyurular" element={<Announcements />} />
-
-
-
-
-
-
-
-            {/* Buyer-only Protected Routes */}
+            <Route
+  path="/ad-details/:companyId/:adId/bid"
+  element={
+    <PrivateRoute requiredRole="seller">
+      <Layout currentItem="Anasayfa">
+        <BidForm />
+      </Layout>
+    </PrivateRoute>
+  }
+/>  
             <Route
               path="/myorders"
               element={
