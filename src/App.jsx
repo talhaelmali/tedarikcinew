@@ -76,7 +76,7 @@ const Logout = () => {
   return null;
 };
 
-const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
+const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
   const { company, loading } = useCompany(); // Access company data and loading state
   const navigate = useNavigate();
   const auth = getAuth();
@@ -95,13 +95,18 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
       return;
     }
 
-    // Eğer giriş yapılmış ancak company bilgisi yoksa ve allowNoCompany true ise erişime izin ver
-    if (allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
+    // Şirket bilgisi yoksa ve allowNoCompany false ise /createcompany sayfasına yönlendir
+    if (!allowNoCompany && (!company || Object.keys(company).length === 0)) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Şirket Bilgisi Gerekli',
+        text: 'Lütfen önce şirket bilgilerinizi oluşturun.',
+      }).then(() => navigate('/createcompany'));
       return;
     }
 
-    // Eğer company mevcutsa ve sayfa /createcompany ise, kullanıcıyı /dashboard'a yönlendir
-    if (allowNoCompany && user && company) {
+    // Şirket mevcutsa ve kullanıcı /createcompany sayfasına gitmeye çalışıyorsa /dashboard'a yönlendir
+    if (allowNoCompany && company && window.location.pathname === '/createcompany') {
       Swal.fire({
         icon: 'info',
         title: 'Şirket Bilgisi Mevcut',
@@ -140,6 +145,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
