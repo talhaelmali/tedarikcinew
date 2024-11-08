@@ -39,7 +39,7 @@ const BidForm = () => {
         const adDoc = await getDoc(doc(db, 'companies', companyId, 'ads', adId));
         if (adDoc.exists()) {
           setAdData(adDoc.data());
-
+  
           // İlan süresi dolmuşsa kullanıcıyı /ads sayfasına yönlendir
           const adEndDate = adDoc.data().endDate;
           if (adEndDate && dayjs().isAfter(dayjs(adEndDate.seconds * 1000))) {
@@ -51,13 +51,22 @@ const BidForm = () => {
             }).then(() => navigate('/ads'));
             return;
           }
+        } else {
+          // Eğer ilan bulunamazsa hata mesajı göster ve yönlendir
+          Swal.fire({
+            title: 'İlan Bulunamadı',
+            text: 'Görüntülemek istediğiniz ilan mevcut değil.',
+            icon: 'error',
+            confirmButtonText: 'Tamam'
+          }).then(() => navigate('/ads'));
+          return;
         }
-
+  
         // Şirket verilerini çek
         const companyDoc = await getDoc(doc(db, 'companies', companyId));
         if (companyDoc.exists()) {
           setCompanyData(companyDoc.data());
-          
+  
           // Kullanıcı ilan sahibi ise /myads sayfasına yönlendir
           if (companyDoc.data().adminUserId === currentUser?.uid) {
             Swal.fire({
@@ -69,55 +78,56 @@ const BidForm = () => {
             return;
           }
         }
-
+  
         // Teklif verilerini çek
         const bidsSnapshot = await getDocs(collection(db, 'companies', companyId, 'ads', adId, 'bids'));
         const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setBids(bidsList);
-
+  
         // Kullanıcının aktif şirketinin bu ilana teklif verip vermediğini kontrol et
         const companyQuery = query(
           collection(db, 'companies'),
           where('adminUserId', '==', currentUser?.uid)
         );
         const companySnapshot = await getDocs(companyQuery);
-
+  
         let userCompanyData = null;
-
+  
         companySnapshot.forEach((doc) => {
           userCompanyData = doc.data();
           userCompanyData.id = doc.id;
         });
-
+  
         if (!userCompanyData) {
           const userQuery = query(
             collection(db, 'companies'),
             where('Users', 'array-contains', currentUser?.uid)
           );
           const userSnapshot = await getDocs(userQuery);
-
+  
           userSnapshot.forEach((doc) => {
             userCompanyData = doc.data();
             userCompanyData.id = doc.id;
           });
         }
-
+  
         if (userCompanyData) {
           const userBid = bidsList.find((bid) => bid.bidderCompanyId === userCompanyData.id);
           if (userBid) {
             setUserBidExists(true); // Kullanıcının zaten bir teklifi var
           }
         }
-
+  
       } catch (error) {
         console.error("Error fetching data:", error);
       }
-
+  
       setLoading(false);
     };
-
+  
     fetchAdAndCompany();
   }, [companyId, adId, currentUser, navigate]);
+  
 
   // En düşük teklifi bul
   const getLowestBid = (bids) => {
