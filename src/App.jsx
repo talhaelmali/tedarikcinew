@@ -300,16 +300,17 @@ const App = () => {
     </PrivateRoute>
   }
 />           
-            <Route
+<Route
   path="/sectors/:companyId"
   element={
-    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+    <PrivateRoute allowNoCompany={true}> {/* Yalnızca oturum açma gerekli */}
       <Layout currentItem="">
         <Sectors />
       </Layout>
     </PrivateRoute>
   }
-/>  
+/>
+
             <Route
   path="/success"
   element={
