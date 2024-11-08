@@ -27,7 +27,7 @@ export default function Sectors() {
           icon: 'error',
           title: 'Yetkisiz Giriş',
           text: 'Giriş yapmanız gerekiyor.',
-        }).then(() => navigate('/pricing'));
+        }).then(() => navigate('/login'));
       }
     });
 
