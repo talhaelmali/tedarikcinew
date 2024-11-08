@@ -106,12 +106,12 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
     }
 
     // Şirket mevcutsa ancak sektör bilgisi eksikse /sectors sayfasına yönlendir
-    if (company && (!company.sectors || company.sectors.length === 0)) {
+    if (company && (!company.sectors || company.sectors.length === 0) && window.location.pathname !== `/sectors/${company.id}`) {
       Swal.fire({
         icon: 'info',
         title: 'Sektör Bilgisi Eksik',
         text: 'Lütfen önce sektör bilginizi tamamlayın.',
-      }).then(() => navigate(`/sectors/${company.id}`)); // company.id'yi doğru şekilde aldığımızdan emin olun
+      }).then(() => navigate(`/sectors/${company.id}`));
       return;
     }
 
@@ -133,20 +133,18 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
     }
   }, [company, requiredRole, navigate, loading, user, allowNoCompany]);
 
+  // Şirket mevcutsa ve rol uygun ise bileşeni render et
   if (!loading && company && ((requiredRole === 'buyer' && company.isBuyerConfirmed === 'yes') || (requiredRole === 'seller' && company.isSellerConfirmed === 'yes'))) {
     return children;
   }
 
+  // allowNoCompany durumunda ve user mevcutsa children'ı render et
   if (allowNoCompany && user && !company) {
     return children;
   }
 
-  return null;
+  return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
-
-
-
-
 
 
 
