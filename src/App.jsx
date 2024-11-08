@@ -143,7 +143,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
     return children;
   }
 
-  return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
+  return null; // Yüklenirken veya yetkisizse hiçbir şey render etmeds
 };
 
 
