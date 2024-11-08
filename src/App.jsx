@@ -76,7 +76,7 @@ const Logout = () => {
   return null;
 };
 
-const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
+const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
   const { company, loading } = useCompany(); // Access company data and loading state
   const navigate = useNavigate();
   const auth = getAuth();
@@ -95,13 +95,18 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Eğer şirket bilgisi yoksa ve allowNoCompany false ise kullanıcıyı /createcompany sayfasına yönlendir
-    if (!allowNoCompany && (!company || Object.keys(company).length === 0)) {
+    // Eğer giriş yapılmış ancak company bilgisi yoksa ve allowNoCompany true ise erişime izin ver
+    if (allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
+      return;
+    }
+
+    // Eğer company mevcutsa ve sayfa /createcompany ise, kullanıcıyı /dashboard'a yönlendir
+    if (allowNoCompany && user && company) {
       Swal.fire({
         icon: 'info',
-        title: 'Şirket Bilgisi Gerekli',
-        text: 'Lütfen önce şirket bilgilerinizi oluşturun.',
-      }).then(() => navigate('/createcompany'));
+        title: 'Şirket Bilgisi Mevcut',
+        text: 'Zaten bir şirketiniz var, ana sayfaya yönlendiriliyorsunuz.',
+      }).then(() => navigate('/dashboard'));
       return;
     }
 
@@ -135,6 +140,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
@@ -210,18 +216,6 @@ const App = () => {
     </PrivateRoute>
   }
 />  
-
-<Route
-  path="/success"
-  element={
-    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
-      <Layout currentItem="">
-        <SuccessRegister />
-      </Layout>
-    </PrivateRoute>
-  }
-/>  
-
 
 <Route
   path="/ad-details/:companyId/:adId"
@@ -300,28 +294,19 @@ const App = () => {
     </PrivateRoute>
   }
 />           
-            <Route
-  path="/sectors/:companyId"
-  element={
-    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
-      <Layout currentItem="">
-        <Sectors />
-      </Layout>
-    </PrivateRoute>
-  }
-/>  
+            <Route path="/sectors/:companyId" element={<Layout currentItem="Anasayfa"><Sectors /></Layout>} />
+            <Route path="/success" element={<Layout currentItem="Anasayfa"><SuccessRegister /></Layout>} />
 
             <Route
   path="/notifications"
   element={
-    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+    <PrivateRoute>
       <Layout currentItem="">
         <Notifications />
       </Layout>
     </PrivateRoute>
   }
-/>  
-
+/>
             <Route path="/chat/:orderId/:companyId1/:companyId2" element={<Layout><ChatPage /></Layout>} />
             <Route path="/profile" element={<Layout currentItem="Siparişler"><Profile /></Layout>} />
             <Route path="/my-company" element={<Layout currentItem="Siparişler"><CompanyDetails /></Layout>} />
