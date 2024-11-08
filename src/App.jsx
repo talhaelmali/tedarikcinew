@@ -105,6 +105,16 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
+    // Şirket bilgisi mevcut ancak sektör seçimi yapılmamışsa /sectors sayfasına yönlendir
+    if (company && (!company.sectors || company.sectors.length === 0) && window.location.pathname !== `/sectors/${company.id}`) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sektör Bilgisi Eksik',
+        text: 'Lütfen önce sektör bilginizi tamamlayın.',
+      }).then(() => navigate(`/sectors/${company.id}`));
+      return;
+    }
+
     // Şirket mevcutsa ve kullanıcı /createcompany sayfasına gitmeye çalışıyorsa /dashboard'a yönlendir
     if (allowNoCompany && company && window.location.pathname === '/createcompany') {
       Swal.fire({
@@ -145,6 +155,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
@@ -303,13 +314,14 @@ const App = () => {
 <Route
   path="/sectors/:companyId"
   element={
-    <PrivateRoute allowNoCompany={true}> {/* Yalnızca oturum açma gerekli */}
+    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
       <Layout currentItem="">
         <Sectors />
       </Layout>
     </PrivateRoute>
   }
 />
+
 
             <Route
   path="/success"
