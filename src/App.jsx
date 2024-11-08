@@ -105,7 +105,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Şirket bilgisi mevcut ancak sektör seçimi yapılmamışsa /sectors sayfasına yönlendir
+    // Şirket mevcutsa ancak sektör bilgisi eksikse /sectors sayfasına yönlendir
     if (company && (!company.sectors || company.sectors.length === 0) && window.location.pathname !== `/sectors/${company.id}`) {
       Swal.fire({
         icon: 'info',
@@ -155,6 +155,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
@@ -314,7 +315,7 @@ const App = () => {
 <Route
   path="/sectors/:companyId"
   element={
-    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+    <PrivateRoute> {/* Şirket bilgisi zorunlu */}
       <Layout currentItem="">
         <Sectors />
       </Layout>
