@@ -95,18 +95,13 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
       return;
     }
 
-    // Eğer giriş yapılmış ancak company bilgisi yoksa ve allowNoCompany true ise erişime izin ver
-    if (allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
-      return;
-    }
-
-    // Eğer company mevcutsa ve sayfa /createcompany ise, kullanıcıyı /dashboard'a yönlendir
-    if (allowNoCompany && user && company) {
+    // Eğer şirket bilgisi yoksa ve allowNoCompany false ise kullanıcıyı /createcompany sayfasına yönlendir
+    if (!allowNoCompany && user && (!company || Object.keys(company).length === 0)) {
       Swal.fire({
         icon: 'info',
-        title: 'Şirket Bilgisi Mevcut',
-        text: 'Zaten bir şirketiniz var, ana sayfaya yönlendiriliyorsunuz.',
-      }).then(() => navigate('/dashboard'));
+        title: 'Şirket Bilgisi Gerekli',
+        text: 'Lütfen önce şirket bilgilerinizi oluşturun.',
+      }).then(() => navigate('/createcompany'));
       return;
     }
 
@@ -140,6 +135,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany }) => {
 
   return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
 };
+
 
 
 
