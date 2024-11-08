@@ -38,15 +38,12 @@ export default function Sectors() {
   const checkUserPermissionAndExistingSectors = async (user) => {
     try {
       const userId = user.uid;
-
-      // Check if user has permission
       const companyRef = doc(db, 'companies', companyId);
       const companyDoc = await getDoc(companyRef);
-      
+  
       if (companyDoc.exists()) {
         const companyData = companyDoc.data();
-
-        // Check adminUserId
+  
         if (companyData.adminUserId !== userId) {
           Swal.fire({
             icon: 'error',
@@ -57,21 +54,21 @@ export default function Sectors() {
           });
           return;
         }
-
-        // Check existing sectors
+  
+        // Eğer sektör bilgisi mevcutsa doğrudan dashboard'a yönlendir
         if (companyData.sectors && companyData.sectors.length > 0) {
           Swal.fire({
             icon: 'warning',
             title: 'Uyarı',
-            text: 'Sektör seçimi daha önce yapılmış, yeni sektör seçimi ve düzenleme için lütfen firma ayarlarına gidiniz.',
+            text: 'Sektör seçimi daha önce yapılmış, firma ayarlarından sektörleri güncelleyebilirsiniz.',
           }).then(() => {
             navigate('/dashboard');
           });
           return;
         }
       }
-
-      // If no existing sectors or has permission, proceed to fetch options
+  
+      // Sektör bilgisi yoksa sektör seçeneklerini getir
       fetchSectors();
     } catch (error) {
       console.error('Error checking user permissions or existing sectors:', error);
@@ -83,6 +80,7 @@ export default function Sectors() {
       navigate('/dashboard');
     }
   };
+  
 
   const fetchSectors = async () => {
     try {

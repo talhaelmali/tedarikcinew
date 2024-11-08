@@ -77,7 +77,7 @@ const Logout = () => {
 };
 
 const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
-  const { company, loading } = useCompany(); // Access company data and loading state
+  const { company, loading } = useCompany();
   const navigate = useNavigate();
   const auth = getAuth();
   const user = auth.currentUser;
@@ -115,17 +115,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Şirket mevcutsa ve kullanıcı /createcompany sayfasına gitmeye çalışıyorsa /dashboard'a yönlendir
-    if (allowNoCompany && company && window.location.pathname === '/createcompany') {
-      Swal.fire({
-        icon: 'info',
-        title: 'Şirket Bilgisi Mevcut',
-        text: 'Zaten bir şirketiniz var, ana sayfaya yönlendiriliyorsunuz.',
-      }).then(() => navigate('/dashboard'));
-      return;
-    }
-
-    // Şirket mevcutsa role göre onay durumu kontrol ediliyor
+    // Rol onay durumu kontrolü
     if (requiredRole === 'buyer' && (!company.isBuyerConfirmed || company.isBuyerConfirmed !== 'yes')) {
       Swal.fire({
         icon: 'warning',
@@ -143,18 +133,17 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
     }
   }, [company, requiredRole, navigate, loading, user, allowNoCompany]);
 
-  // Şirket mevcutsa ve rol uygun ise bileşeni render et
   if (!loading && company && ((requiredRole === 'buyer' && company.isBuyerConfirmed === 'yes') || (requiredRole === 'seller' && company.isSellerConfirmed === 'yes'))) {
     return children;
   }
 
-  // allowNoCompany durumunda ve user mevcutsa children'ı render et
   if (allowNoCompany && user && !company) {
     return children;
   }
 
-  return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
+  return null;
 };
+
 
 
 
@@ -315,7 +304,7 @@ const App = () => {
 <Route
   path="/sectors/:companyId"
   element={
-    <PrivateRoute> {/* Şirket bilgisi zorunlu */}
+    <PrivateRoute> 
       <Layout currentItem="">
         <Sectors />
       </Layout>
