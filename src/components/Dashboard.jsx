@@ -23,11 +23,20 @@ export default function Dashboard() {
     setRejectionReason('');
   }, []);
 
-  // Şirket kaydı yoksa yönlendirme
+  // Şirket kaydı ve sektör bilgisi kontrolü
   useEffect(() => {
     if (loading) return; // Eğer yükleme devam ediyorsa hiçbir şey yapma
+
+    // Eğer şirket kaydı yoksa yönlendir
     if (!company || Object.keys(company).length === 0) {
       navigate('/createcompany');
+      return;
+    }
+
+    // Eğer sektör bilgisi yoksa yönlendir
+    if (!company.sectors || company.sectors.length === 0) {
+      navigate(`/sectors/${company.id}`);
+      return;
     }
   }, [company, loading, navigate]);
 

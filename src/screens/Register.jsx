@@ -39,7 +39,6 @@ function Register() {
 
       // Send email verification
       await sendEmailVerification(user);
-      console.log("Kayıt başarılı, profil güncellendi:", user.displayName);
 
       swal("Kayıt başarılı", "Başarıyla kayıt oldunuz! Lütfen e-posta adresinizi doğrulamak için gelen kutunuzu kontrol edin.", "success").then(() => {
         navigate('/createcompany'); // Kayıt başarılı olduğunda yönlendirme
