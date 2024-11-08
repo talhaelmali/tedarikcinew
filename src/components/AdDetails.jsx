@@ -80,50 +80,72 @@ const AdDetails = () => {
 
   useEffect(() => {
     const adRef = doc(db, 'companies', companyId, 'ads', adId);
+    
     const unsubscribeAd = onSnapshot(adRef, async (doc) => {
-      setAdData(doc.exists() ? doc.data() : null);
-      setLoading(false);
-
-      if (doc.exists()) {
-        const bidsRef = collection(db, 'companies', companyId, 'ads', adId, 'bids');
-        const bidsSnapshot = await getDocs(bidsRef);
-        const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-        const newBidderRatings = {};
-        const mainCompanyRating = await fetchRatings(companyId);
-        newBidderRatings[companyId] = mainCompanyRating;
-
-        for (const bid of bidsList) {
-          const bidderRating = await fetchRatings(bid.bidderCompanyId);
-          newBidderRatings[bid.bidderCompanyId] = bidderRating;
-        }
-
-        setBids(bidsList);
-        setBidderRatings(newBidderRatings);
+      if (!doc.exists()) {
+        // Eğer ilan bulunamadıysa kullanıcıyı yönlendir ve hata mesajı göster
+        Swal.fire({
+          icon: 'error',
+          title: 'İlan Bulunamadı',
+          text: 'Görüntülemek istediğiniz ilan bulunamadı.',
+        }).then(() => {
+          navigate('/ads');
+        });
+        return;
       }
+  
+      setAdData(doc.data());
+      setLoading(false);
+  
+      const bidsRef = collection(db, 'companies', companyId, 'ads', adId, 'bids');
+      const bidsSnapshot = await getDocs(bidsRef);
+      const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
+      const newBidderRatings = {};
+      const mainCompanyRating = await fetchRatings(companyId);
+      newBidderRatings[companyId] = mainCompanyRating;
+  
+      for (const bid of bidsList) {
+        const bidderRating = await fetchRatings(bid.bidderCompanyId);
+        newBidderRatings[bid.bidderCompanyId] = bidderRating;
+      }
+  
+      setBids(bidsList);
+      setBidderRatings(newBidderRatings);
     });
-
+  
     const fetchAdOwnerCompany = async () => {
       const companyRef = doc(db, 'companies', companyId);
       const companyDoc = await getDoc(companyRef);
       
-      if (companyDoc.exists()) {
-        setAdOwnerCompany({ id: companyDoc.id, ...companyDoc.data() });
-    
-        if (currentUser) {
-          const isAdmin = companyDoc.data().adminUserId === currentUser.uid;
-          setIsUserAdmin(isAdmin);
-    
-          setIsUserAdminOrMember(companyDoc.data().adminUserId === currentUser.uid || company?.id === companyId);
-        }
+      if (!companyDoc.exists()) {
+        // Eğer şirket bilgisi bulunamadıysa hata mesajı göster ve yönlendir
+        Swal.fire({
+          icon: 'error',
+          title: 'Şirket Bilgisi Bulunamadı',
+          text: 'İlana ait şirket bilgisi bulunamadı.',
+        }).then(() => {
+          navigate('/ads');
+        });
+        return;
+      }
+  
+      setAdOwnerCompany({ id: companyDoc.id, ...companyDoc.data() });
+  
+      if (currentUser) {
+        const isAdmin = companyDoc.data().adminUserId === currentUser.uid;
+        setIsUserAdmin(isAdmin);
+        setIsUserAdminOrMember(companyDoc.data().adminUserId === currentUser.uid || company?.id === companyId);
       }
     };
-
+  
     fetchAdOwnerCompany();
     fetchFollowingStatus();
-
+  
     return () => unsubscribeAd();
   }, [adId, companyId, currentUser]);
+  
+  
 
   const fetchRatings = async (companyId) => {
     const ratingsRef = collection(db, 'companies', companyId, 'ratings');
