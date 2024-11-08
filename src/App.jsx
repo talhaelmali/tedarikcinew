@@ -216,6 +216,18 @@ const App = () => {
     </PrivateRoute>
   }
 />  
+
+<Route
+  path="/ad-details/:companyId/:adId"
+  element={
+    <PrivateRoute requiredRole="seller">
+      <Layout currentItem="Anasayfa">
+        <AdDetails />
+      </Layout>
+    </PrivateRoute>
+  }
+/>
+
             <Route
               path="/myorders"
               element={
@@ -284,31 +296,13 @@ const App = () => {
 />            <Route path="/updateemail" element={<Layout currentItem="Destek"><UpdateEmail /></Layout>} />
             <Route path="/sectors/:companyId" element={<Layout currentItem="Anasayfa"><Sectors /></Layout>} />
             <Route path="/success" element={<Layout currentItem="Anasayfa"><SuccessRegister /></Layout>} />
-            <Route
-  path="/ad-details/:companyId/:adId/bid"
-  element={
-    <PrivateRoute requiredRole="seller">
-      <Layout currentItem="Anasayfa">
-        <BidForm />
-      </Layout>
-    </PrivateRoute>
-  }
-/>
+
             <Route path="/notifications" element={<Layout currentItem=""><Notifications /></Layout>} />
             <Route path="/chat/:orderId/:companyId1/:companyId2" element={<Layout><ChatPage /></Layout>} />
             <Route path="/profile" element={<Layout currentItem="Siparişler"><Profile /></Layout>} />
             <Route path="/my-company" element={<Layout currentItem="Siparişler"><CompanyDetails /></Layout>} />
             <Route path="/teammembers" element={<Layout currentItem="Siparişler"><TeamMembers /></Layout>} />
-            <Route
-  path="/ad-details/:companyId/:adId/bid"
-  element={
-    <PrivateRoute requiredRole="seller">
-      <Layout currentItem="Anasayfa">
-        <BidForm />
-      </Layout>
-    </PrivateRoute>
-  }
-/>
+
 
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/announcements/:id" element={<AnnouncementDetail />} />
