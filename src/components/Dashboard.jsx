@@ -25,18 +25,17 @@ export default function Dashboard() {
 
   // Şirket kaydı ve sektör bilgisi kontrolü
   useEffect(() => {
-    if (loading) return; // Eğer yükleme devam ediyorsa hiçbir şey yapma
+    if (loading || !company) return; // Yükleme devam ediyorsa ya da şirket verisi henüz yoksa hiçbir şey yapma
 
     // Eğer şirket kaydı yoksa yönlendir
-    if (!company || Object.keys(company).length === 0) {
+    if (Object.keys(company).length === 0) {
       navigate('/createcompany');
       return;
     }
 
-    // Eğer sektör bilgisi yoksa yönlendir
+    // Şirket verisi tamamen yüklendiğinde sektör kontrolünü yap
     if (!company.sectors || company.sectors.length === 0) {
       navigate(`/sectors/${company.id}`);
-      return;
     }
   }, [company, loading, navigate]);
 

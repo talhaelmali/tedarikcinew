@@ -83,9 +83,9 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
   const user = auth.currentUser;
 
   useEffect(() => {
-    if (loading) return; // Şirket bilgileri yüklenirken bekle
+    if (loading) return; // Wait until loading completes
 
-    // Kullanıcı giriş yapmamışsa /login sayfasına yönlendir
+    // Redirect to login if not authenticated
     if (!user) {
       Swal.fire({
         icon: 'info',
@@ -95,7 +95,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Şirket bilgisi yoksa ve allowNoCompany false ise /createcompany sayfasına yönlendir
+    // Check if company data is required and redirect if missing
     if (!allowNoCompany && (!company || Object.keys(company).length === 0)) {
       Swal.fire({
         icon: 'info',
@@ -105,36 +105,35 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Rol onay durumu kontrolü
-    if (requiredRole === 'buyer' && (!company.isBuyerConfirmed || company.isBuyerConfirmed !== 'yes')) {
+    // Role-specific access checks
+    if (requiredRole === 'buyer' && company?.isBuyerConfirmed !== 'yes') {
       Swal.fire({
         icon: 'warning',
         title: 'Erişim Engellendi!',
         text: 'Alıcı profiliniz henüz onaylanmamış.',
       }).then(() => navigate('/dashboard'));
+      return;
     }
 
-    if (requiredRole === 'seller' && (!company.isSellerConfirmed || company.isSellerConfirmed !== 'yes')) {
+    if (requiredRole === 'seller' && company?.isSellerConfirmed !== 'yes') {
       Swal.fire({
         icon: 'warning',
         title: 'Erişim Engellendi!',
         text: 'Satıcı profiliniz henüz onaylanmamış.',
       }).then(() => navigate('/dashboard'));
+      return;
     }
   }, [company, requiredRole, navigate, loading, user, allowNoCompany]);
 
-  // Şirket mevcutsa ve rol uygun ise bileşeni render et
-  if (!loading && company && ((requiredRole === 'buyer' && company.isBuyerConfirmed === 'yes') || (requiredRole === 'seller' && company.isSellerConfirmed === 'yes'))) {
-    return children;
+  // Show a loading state until the company data is loaded
+  if (loading) {
+    return <div>Loading...</div>; // Replace with your custom loading component if desired
   }
 
-  // allowNoCompany durumunda ve user mevcutsa children'ı render et
-  if (allowNoCompany && user && !company) {
-    return children;
-  }
-
-  return null; // Yüklenirken veya yetkisizse hiçbir şey render etme
+  // Render children if all conditions are met
+  return !loading && user && (allowNoCompany || company) ? children : null;
 };
+
 
 
 
