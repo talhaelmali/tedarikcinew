@@ -38,7 +38,7 @@ export const CompanyProvider = ({ children }) => {
             }
           }
 
-          // Object formatında teamMembers kontrolü
+          // Object formatında teamMembers kontrolüs
           if (!Array.isArray(teamMembers)) {
             const isUserInTeamObject = Object.keys(teamMembers).some((memberId) => memberId === user.uid);
             if (isUserInTeamObject) {
