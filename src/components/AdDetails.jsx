@@ -183,7 +183,7 @@ const AdDetails = () => {
     fetchUserCompany();
   }, [companyId, adId, navigate]);
 
-  seEffect(() => {
+  UseEffect(() => {
     if (!loading && adData && userCompany) {
       const isOwner = userCompany.id === companyId;
       const isSellerConfirmed = userCompany.isSellerConfirmed === 'yes';
