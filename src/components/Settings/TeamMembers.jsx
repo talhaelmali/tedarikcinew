@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getDoc, doc } from "firebase/firestore";
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import swal from 'sweetalert';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { API_URL } from '../../config';
