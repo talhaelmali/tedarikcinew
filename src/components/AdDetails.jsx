@@ -80,6 +80,7 @@ const AdDetails = () => {
     return () => unsubscribeAuth();
   }, []);
 
+
   useEffect(() => {
     const adRef = doc(db, 'companies', companyId, 'ads', adId);
     
@@ -182,74 +183,8 @@ const AdDetails = () => {
     fetchUserCompany();
   }, [companyId, adId, navigate]);
 
-  useEffect(() => {
-    if (!isLoading && adData && userCompany) {
-      const isOwner = userCompany.id === companyId;
-      const isSellerConfirmed = userCompany.isSellerConfirmed === 'yes';
 
-      // Redirect if user is not the owner, has an unconfirmed seller account, and is viewing another company's ad
-      if (!isOwner && !isSellerConfirmed) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Erişim Engellendi!',
-          text: 'Satıcı profiliniz henüz onaylanmamış.',
-        }).then(() => navigate('/dashboard'));
-      }
-    }
-  }, [adData, isLoading, userCompany, companyId, navigate]);
 
-  useEffect(() => {
-    const checkAdminAndSellerStatus = async () => {
-      setSellerCheckLoading(true); // Start seller check loading
-
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) return;
-
-      try {
-        // Fetch the logged-in user's company data using their UID
-        const userCompanyRef = doc(db, 'companies', user.uid);
-        const userCompanySnap = await getDoc(userCompanyRef);
-
-        if (userCompanySnap.exists()) {
-          const userCompanyData = userCompanySnap.data();
-          const isAdmin = userCompanyData.adminUserId === user.uid;
-
-          setIsUserAdmin(isAdmin);
-
-          // Only proceed with seller check if user is not admin
-          if (!isAdmin && userCompanyData.isSellerConfirmed !== 'yes') {
-            Swal.fire({
-              icon: 'warning',
-              title: 'Erişim Engellendi!',
-              text: 'Satıcı profiliniz henüz onaylanmamış.',
-            }).then(() => navigate('/dashboard'));
-            return;
-          }
-
-          setUserCompany(userCompanyData); // Set company data after confirmation check
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Hata',
-            text: 'Şirket bilgileri bulunamadı.',
-          }).then(() => navigate('/dashboard'));
-        }
-      } catch (error) {
-        console.error('Error fetching user company data:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Hata',
-          text: 'Bir hata oluştu. Lütfen daha sonra tekrar deneyin.',
-        }).then(() => navigate('/dashboard'));
-      } finally {
-        setSellerCheckLoading(false); // Stop loading after check
-      }
-    };
-
-    checkAdminAndSellerStatus();
-  }, [navigate]);
 
   
   

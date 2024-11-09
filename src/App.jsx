@@ -1,5 +1,5 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, Suspense  } from 'react';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useParams} from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Helmet } from 'react-helmet';
@@ -81,11 +81,12 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
   const navigate = useNavigate();
   const auth = getAuth();
   const user = auth.currentUser;
+  const { companyId: routeCompanyId } = useParams(); // URL'den companyId'yi al
 
   useEffect(() => {
-    if (loading) return; // Wait until loading completes
+    if (loading) return; // Loading işlemi bitene kadar bekle
 
-    // Redirect to login if not authenticated
+    // Kullanıcı giriş yapmadıysa yönlendirme
     if (!user) {
       Swal.fire({
         icon: 'info',
@@ -95,7 +96,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Check if company data is required and redirect if missing
+    // Şirket verisi zorunluysa ve yoksa yönlendirme
     if (!allowNoCompany && (!company || Object.keys(company).length === 0)) {
       Swal.fire({
         icon: 'info',
@@ -123,16 +124,30 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       }).then(() => navigate('/dashboard'));
       return;
     }
-  }, [company, requiredRole, navigate, loading, user, allowNoCompany]);
 
-  // Show a loading state until the company data is loaded
+    // Yeni ownerOrSeller rolü için kontrol
+    if (
+      requiredRole === 'ownerOrSeller' &&
+      (routeCompanyId !== company?.id && company?.isSellerConfirmed !== 'yes')
+    ) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Erişim Engellendi!',
+        text: 'Bu sayfaya erişmek için ya ilanın sahibi olmalı ya da satıcı onayına sahip olmalısınız.',
+      }).then(() => navigate('/dashboard'));
+      return;
+    }
+  }, [company, requiredRole, navigate, loading, user, allowNoCompany, routeCompanyId]);
+
+  // Loading işlemi sırasında gösterilecek yüklenme bileşeni
   if (loading) {
-    return <div>Loading...</div>; // Replace with your custom loading component if desired
+    return <div>Loading...</div>;
   }
 
-  // Render children if all conditions are met
+  // Şartlar sağlanıyorsa içeriği render et
   return !loading && user && (allowNoCompany || company) ? children : null;
 };
+
 
 
 
@@ -216,13 +231,14 @@ const App = () => {
 <Route
   path="/ad-details/:companyId/:adId"
   element={
-    <PrivateRoute>
+    <PrivateRoute requiredRole="ownerOrSeller">
       <Layout currentItem="Anasayfa">
         <AdDetails />
       </Layout>
     </PrivateRoute>
   }
 />
+
 
 
             <Route
