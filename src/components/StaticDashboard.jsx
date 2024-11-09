@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, getDocs, getFirestore } from 'firebase/firestore';
+import { collection, query, onSnapshot, getFirestore, orderBy } from 'firebase/firestore';
 import { useCompany } from '../context/CompanyContext'; 
 import BuyerStats from './BuyerStats';
 import BuyerAdCard from './BuyerAdCard';
@@ -14,17 +14,27 @@ export default function StaticDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAds = async () => {
-      if (company) {
-        const adsQuery = query(collection(db, 'companies', company.id, 'ads'));
-        const adsSnapshot = await getDocs(adsQuery);
+    if (company) {
+      const adsQuery = query(
+        collection(db, 'companies', company.id, 'ads'),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsubscribe = onSnapshot(adsQuery, (adsSnapshot) => {
         const adsData = [];
         
         adsSnapshot.forEach((adDoc) => {
           const adData = adDoc.data();
+          adData.id = adDoc.id;
+
+          // Convert Firestore timestamp to Date
+          if (adData.createdAt && adData.createdAt.toDate) {
+            adData.createdAt = adData.createdAt.toDate();
+          }
+
           const endDate = calculateEndDate(adData.createdAt, adData.duration);
 
-          // Filter out expired ads
+          // Only include active ads
           if (isAdActive(endDate)) {
             adsData.push({ id: adDoc.id, ...adData });
           }
@@ -32,14 +42,15 @@ export default function StaticDashboard() {
 
         setAds(adsData);
         setLoading(false);
-      }
-    };
-    fetchAds();
+      });
+
+      return () => unsubscribe();
+    }
   }, [company]);
 
   const calculateEndDate = (createdAt, duration) => {
     if (!createdAt || !duration) return null;
-    const date = new Date(createdAt.seconds * 1000);
+    const date = new Date(createdAt.getTime());
     date.setDate(date.getDate() + parseInt(duration, 10));
     return date;
   };
@@ -72,15 +83,15 @@ export default function StaticDashboard() {
 
       <div className="mt-6">
         <h2 className="text-xl font-semibold text-gray-900">İlanlarım</h2>
-        {myAds.length > 0 ? (
-          <ul role="list" className="divide-y divide-gray-200 mt-4">
-            {myAds.map(ad => (
-              <BuyerAdCard key={ad.id} ad={ad} />
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
-        )}
+        <ul role="list" className="divide-y divide-gray-200 mt-4">
+          {myAds.length > 0 ? (
+            myAds.map(ad => (
+              <BuyerAdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
+            ))
+          ) : (
+            <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+          )}
+        </ul>
       </div>
     </div>
   );

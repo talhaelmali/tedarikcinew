@@ -33,8 +33,6 @@ const AdDetails = () => {
   const [isUserAdminOrMember, setIsUserAdminOrMember] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [userCompany, setUserCompany] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Düzenleme modali kontrol state
   const navigate = useNavigate();
 
@@ -43,22 +41,6 @@ const AdDetails = () => {
       fetchFollowingStatus(); // Şirket yüklendiğinde takip durumu kontrol ediliyor.
     }
   }, [company, adId]);
-
-  useEffect(() => {
-    if (!loading && adData) {
-      const isExpired = adData.endDate && dayjs().isAfter(dayjs(adData.endDate.seconds * 1000));
-      
-      if (isExpired && adOwnerCompany?.id !== company?.id) {
-        Swal.fire({
-          icon: 'info',
-          title: 'İlan Süresi Doldu',
-          text: 'Bu ilan süresi dolduğu için artık görüntülenemiyor.',
-        }).then(() => {
-          navigate('/ads');
-        });
-      }
-    }
-  }, [adData, loading, adOwnerCompany, company, navigate]);
   
   const fetchFollowingStatus = () => {
     if (company?.FollowedAds && company.FollowedAds.includes(adId)) {
@@ -80,123 +62,68 @@ const AdDetails = () => {
     return () => unsubscribeAuth();
   }, []);
 
-
   useEffect(() => {
     const adRef = doc(db, 'companies', companyId, 'ads', adId);
-    
     const unsubscribeAd = onSnapshot(adRef, async (doc) => {
-      if (!doc.exists()) {
-        // Eğer ilan bulunamadıysa kullanıcıyı yönlendir ve hata mesajı göster
-        Swal.fire({
-          icon: 'error',
-          title: 'İlan Bulunamadı',
-          text: 'Görüntülemek istediğiniz ilan bulunamadı.',
-        }).then(() => {
-          navigate('/ads');
-        });
-        return;
-      }
-  
-      setAdData(doc.data());
+      setAdData(doc.exists() ? doc.data() : null);
       setLoading(false);
-  
-      const bidsRef = collection(db, 'companies', companyId, 'ads', adId, 'bids');
-      const bidsSnapshot = await getDocs(bidsRef);
-      const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  
-      const newBidderRatings = {};
-      const mainCompanyRating = await fetchRatings(companyId);
-      newBidderRatings[companyId] = mainCompanyRating;
-  
-      for (const bid of bidsList) {
-        const bidderRating = await fetchRatings(bid.bidderCompanyId);
-        newBidderRatings[bid.bidderCompanyId] = bidderRating;
+
+      if (doc.exists()) {
+        const bidsRef = collection(db, 'companies', companyId, 'ads', adId, 'bids');
+        const bidsSnapshot = await getDocs(bidsRef);
+        const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+        const newBidderRatings = {};
+        const mainCompanyRating = await fetchRatings(companyId);
+        newBidderRatings[companyId] = mainCompanyRating;
+
+        for (const bid of bidsList) {
+          const bidderRating = await fetchRatings(bid.bidderCompanyId);
+          newBidderRatings[bid.bidderCompanyId] = bidderRating;
+        }
+
+        setBids(bidsList);
+        setBidderRatings(newBidderRatings);
       }
-  
-      setBids(bidsList);
-      setBidderRatings(newBidderRatings);
     });
-  
+
     const fetchAdOwnerCompany = async () => {
       const companyRef = doc(db, 'companies', companyId);
       const companyDoc = await getDoc(companyRef);
       
-      if (!companyDoc.exists()) {
-        // Eğer şirket bilgisi bulunamadıysa hata mesajı göster ve yönlendir
-        Swal.fire({
-          icon: 'error',
-          title: 'Şirket Bilgisi Bulunamadı',
-          text: 'İlana ait şirket bilgisi bulunamadı.',
-        }).then(() => {
-          navigate('/ads');
-        });
-        return;
-      }
-  
-      setAdOwnerCompany({ id: companyDoc.id, ...companyDoc.data() });
-  
-      if (currentUser) {
-        const isAdmin = companyDoc.data().adminUserId === currentUser.uid;
-        setIsUserAdmin(isAdmin);
-        setIsUserAdminOrMember(companyDoc.data().adminUserId === currentUser.uid || company?.id === companyId);
+      if (companyDoc.exists()) {
+        setAdOwnerCompany({ id: companyDoc.id, ...companyDoc.data() });
+    
+        if (currentUser) {
+          const isAdmin = companyDoc.data().adminUserId === currentUser.uid;
+          setIsUserAdmin(isAdmin);
+    
+          setIsUserAdminOrMember(companyDoc.data().adminUserId === currentUser.uid || company?.id === companyId);
+        }
       }
     };
-  
+
     fetchAdOwnerCompany();
     fetchFollowingStatus();
-  
+
     return () => unsubscribeAd();
   }, [adId, companyId, currentUser]);
 
   useEffect(() => {
-    const fetchAdData = async () => {
-      try {
-        const adRef = doc(db, 'companies', companyId, 'ads', adId);
-        const adSnap = await getDoc(adRef);
-
-        if (!adSnap.exists()) {
-          Swal.fire({
-            icon: 'error',
-            title: 'İlan Bulunamadı',
-            text: 'Bu ilan mevcut değil.',
-          }).then(() => navigate('/ads'));
-          return;
-        }
-
-        setAdData(adSnap.data());
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching ad data:', error);
+    if (!loading && adData) {
+      const isExpired = adData.endDate && dayjs().isAfter(dayjs(adData.endDate.seconds * 1000));
+      
+      if (isExpired && adOwnerCompany?.id !== company?.id) {
+        Swal.fire({
+          icon: 'info',
+          title: 'İlan Süresi Doldu',
+          text: 'Bu ilan süresi dolduğu için artık görüntülenemiyor.',
+        }).then(() => {
+          navigate('/ads');
+        });
       }
-    };
-
-    const fetchUserCompany = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const companyRef = doc(db, 'companies', user.uid);
-        const companySnap = await getDoc(companyRef);
-        setUserCompany(companySnap.exists() ? companySnap.data() : null);
-      }
-    };
-
-    fetchAdData();
-    fetchUserCompany();
-  }, [companyId, adId, navigate]);
-
-
-
-
-  
-  
-  
-  
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-
-  
+    }
+  }, [adData, loading, adOwnerCompany, company, navigate]);
   
 
   const fetchRatings = async (companyId) => {
