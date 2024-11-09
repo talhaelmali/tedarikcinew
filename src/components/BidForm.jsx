@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { collection, doc, query, where, getFirestore, addDoc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, getDoc, getDocs } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 import dayjs from 'dayjs';
-
-const db = getFirestore();
+import { useCompany } from '../context/CompanyContext';
 
 const BidForm = () => {
   const { companyId, adId } = useParams();
   const [currentUser, setCurrentUser] = useState(null);
-  const [companyData, setCompanyData] = useState(null);
   const [adData, setAdData] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
   const [bidDetails, setBidDetails] = useState('');
-  const [additionalDetails, setAdditionalDetails] = useState(''); // İkinci opsiyonel input
-  const [bids, setBids] = useState([]); 
-  const [userBidExists, setUserBidExists] = useState(false); 
+  const [additionalDetails, setAdditionalDetails] = useState('');
+  const [bids, setBids] = useState([]);
+  const [userBidExists, setUserBidExists] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const { company, loading: companyLoading } = useCompany();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -33,13 +33,16 @@ const BidForm = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAdAndCompany = async () => {
+    const fetchAdData = async () => {
+      // companyLoading kontrolü ile company verisinin tam yüklenmesini bekleyin
+      if (companyLoading || !company) return;
+
       try {
         // İlan verilerini çek
         const adDoc = await getDoc(doc(db, 'companies', companyId, 'ads', adId));
         if (adDoc.exists()) {
           setAdData(adDoc.data());
-  
+
           // İlan süresi dolmuşsa kullanıcıyı /ads sayfasına yönlendir
           const adEndDate = adDoc.data().endDate;
           if (adEndDate && dayjs().isAfter(dayjs(adEndDate.seconds * 1000))) {
@@ -61,87 +64,39 @@ const BidForm = () => {
           }).then(() => navigate('/ads'));
           return;
         }
-  
-        // Şirket verilerini çek
-        const companyDoc = await getDoc(doc(db, 'companies', companyId));
-        if (companyDoc.exists()) {
-          setCompanyData(companyDoc.data());
-  
-          // Kullanıcı ilan sahibi ise /myads sayfasına yönlendir
-          if (companyDoc.data().adminUserId === currentUser?.uid) {
-            Swal.fire({
-              title: 'Kendi İlanınıza Teklif Veremezsiniz',
-              text: 'Bu ilan sizin tarafınızdan oluşturulmuş. Kendi ilanınıza teklif veremezsiniz.',
-              icon: 'error',
-              confirmButtonText: 'Tamam'
-            }).then(() => navigate('/myads'));
-            return;
-          }
-        }
-  
+
         // Teklif verilerini çek
         const bidsSnapshot = await getDocs(collection(db, 'companies', companyId, 'ads', adId, 'bids'));
         const bidsList = bidsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setBids(bidsList);
-  
+
         // Kullanıcının aktif şirketinin bu ilana teklif verip vermediğini kontrol et
-        const companyQuery = query(
-          collection(db, 'companies'),
-          where('adminUserId', '==', currentUser?.uid)
-        );
-        const companySnapshot = await getDocs(companyQuery);
-  
-        let userCompanyData = null;
-  
-        companySnapshot.forEach((doc) => {
-          userCompanyData = doc.data();
-          userCompanyData.id = doc.id;
-        });
-  
-        if (!userCompanyData) {
-          const userQuery = query(
-            collection(db, 'companies'),
-            where('Users', 'array-contains', currentUser?.uid)
-          );
-          const userSnapshot = await getDocs(userQuery);
-  
-          userSnapshot.forEach((doc) => {
-            userCompanyData = doc.data();
-            userCompanyData.id = doc.id;
-          });
+        const userBid = bidsList.find((bid) => bid.bidderCompanyId === company.id);
+        if (userBid) {
+          setUserBidExists(true); // Kullanıcının zaten bir teklifi var
         }
-  
-        if (userCompanyData) {
-          const userBid = bidsList.find((bid) => bid.bidderCompanyId === userCompanyData.id);
-          if (userBid) {
-            setUserBidExists(true); // Kullanıcının zaten bir teklifi var
-          }
-        }
-  
       } catch (error) {
         console.error("Error fetching data:", error);
       }
-  
       setLoading(false);
     };
-  
-    fetchAdAndCompany();
-  }, [companyId, adId, currentUser, navigate]);
-  
+
+    fetchAdData();
+  }, [companyId, adId, navigate, company, companyLoading]);
 
   // En düşük teklifi bul
   const getLowestBid = (bids) => {
     if (bids.length > 0) {
       return Math.min(...bids.map(bid => parseFloat(bid.bidAmount)));
     }
-    return null; // Eğer teklif yoksa null döner
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const bidValue = parseFloat(bidAmount);
-    
+
     // maxBid değeri varsa en düşük teklifi veya adData'daki maxBid'i kontrol et
     let maxBid = null;
     if (adData?.adType === 'Açık Usül İhale') {
@@ -150,8 +105,8 @@ const BidForm = () => {
     } else {
       maxBid = adData?.maxBid;
     }
-    
-    // Eğer maxBid null değilse (boş değilse) ve bidValue maxBid'e eşitse veya daha büyükse hata göster
+
+    // Eğer maxBid null değilse ve bidValue maxBid'e eşitse veya daha büyükse hata göster
     if (maxBid !== null && (bidValue >= maxBid || bidValue === maxBid)) {
       Swal.fire({
         title: 'Hata!',
@@ -161,7 +116,7 @@ const BidForm = () => {
       });
       return;
     }
-    
+
     // İlk teklifse detayları kontrol et, opsiyonel ikinci teklif için kontrol yapma
     if (!userBidExists && !bidDetails) {
       Swal.fire({
@@ -172,45 +127,19 @@ const BidForm = () => {
       });
       return;
     }
-    
+
     try {
-      const companyQuery = query(
-        collection(db, 'companies'),
-        where('adminUserId', '==', currentUser.uid)
-      );
-      const companySnapshot = await getDocs(companyQuery);
-    
-      let userCompanyData = null;
-    
-      companySnapshot.forEach((doc) => {
-        userCompanyData = doc.data();
-        userCompanyData.id = doc.id;
-      });
-    
-      if (!userCompanyData) {
-        const userQuery = query(
-          collection(db, 'companies'),
-          where('Users', 'array-contains', currentUser.uid)
-        );
-        const userSnapshot = await getDocs(userQuery);
-    
-        userSnapshot.forEach((doc) => {
-          userCompanyData = doc.data();
-          userCompanyData.id = doc.id;
-        });
-      }
-    
-      if (userCompanyData) {
+      if (company) {
         const bidData = {
-          bidderCompanyId: userCompanyData.id,
-          bidderCompanyName: userCompanyData.companyName,
+          bidderCompanyId: company.id,
+          bidderCompanyName: company.companyName,
           bidAmount: bidValue,
           bidDetails: userBidExists ? additionalDetails : bidDetails,
           createdAt: new Date(),
         };
-    
+
         await addDoc(collection(db, 'companies', companyId, 'ads', adId, 'bids'), bidData);
-    
+
         Swal.fire({
           title: 'Başarılı!',
           text: 'Teklifiniz başarıyla gönderildi.',
@@ -232,8 +161,8 @@ const BidForm = () => {
       });
     }
   };
-  
-  if (loading) {
+
+  if (loading || companyLoading) {
     return <div>Loading...</div>;
   }
 
