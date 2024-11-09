@@ -33,6 +33,8 @@ const AdDetails = () => {
   const [isUserAdminOrMember, setIsUserAdminOrMember] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [userCompany, setUserCompany] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Düzenleme modali kontrol state
   const navigate = useNavigate();
 
