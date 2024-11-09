@@ -113,7 +113,9 @@ export default function Sectors() {
         icon: 'success',
         title: 'Başarılı',
         text: 'Sektörler başarıyla kaydedildi.',
-      }).then(() => navigate('/success'));
+      }).then(() => {
+        window.location.href = '/success'; // Forces a reload for fresh data on /success page
+      });      
     } catch (error) {
       Swal.fire({
         icon: 'error',
