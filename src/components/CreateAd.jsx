@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getFirestore, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth } from '../firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebaseConfig';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
 import { useNavigate } from 'react-router-dom';
+import { useCompany } from '../context/CompanyContext'; // useCompany import edildi
 
-const db = getFirestore();
 const storage = getStorage();
 
 export default function CreateAd() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sectorOptions, setSectorOptions] = useState([]);
   const [uploadedImages, setUploadedImages] = useState([]); // Yüklenen resimler (URL formatında)
@@ -20,6 +18,7 @@ export default function CreateAd() {
   const navigate = useNavigate();
   const [formError, setFormError] = useState(''); // Validasyon hatası için state
 
+  const { company, loading: companyLoading } = useCompany(); // Company verisi alındı
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,7 +36,7 @@ export default function CreateAd() {
 
   // Kullanıcıyı takip etme
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setCurrentUser(user);
       } else {
@@ -48,34 +47,10 @@ export default function CreateAd() {
     return () => unsubscribe();
   }, []);
 
-  // Şirket ve sektör bilgilerini getirme
+  // Sektör bilgilerini getirme
   useEffect(() => {
-    const fetchCompanyAndSectors = async () => {
+    const fetchSectors = async () => {
       if (currentUser) {
-        const q = query(collection(db, 'companies'), where('adminUserId', '==', currentUser.uid));
-        const querySnapshot = await getDocs(q);
-        let companyData = null;
-        let companyId = null;
-
-        querySnapshot.forEach((doc) => {
-          companyData = doc.data();
-          companyId = doc.id;
-        });
-
-        if (!companyData) {
-          const q2 = query(collection(db, 'companies'), where('Users', 'array-contains', currentUser.uid));
-          const querySnapshot2 = await getDocs(q2);
-
-          querySnapshot2.forEach((doc) => {
-            companyData = doc.data();
-            companyId = doc.id;
-          });
-        }
-
-        if (companyData) {
-          setCompany({ ...companyData, id: companyId });
-        }
-
         const sectorQuery = query(collection(db, 'sectors'), where('type', '==', 'Alt Sektör'));
         const sectorSnapshot = await getDocs(sectorQuery);
         const sectors = sectorSnapshot.docs.map((doc) => ({
@@ -87,7 +62,7 @@ export default function CreateAd() {
       }
     };
 
-    fetchCompanyAndSectors();
+    fetchSectors();
   }, [currentUser]);
 
   const formatNumber = (value) => {
@@ -199,7 +174,7 @@ export default function CreateAd() {
         companyId: company.id,
         dueDate: dueDateWithTime,
         createdAt: serverTimestamp(),
-        endDate: endDate, // endDate verisini ekleyin
+        endDate: endDate,
       };
   
       await addDoc(collection(db, 'companies', company.id, 'ads'), adData);
@@ -220,9 +195,7 @@ export default function CreateAd() {
     }
   };
   
-  
-
-  if (loading) {
+  if (loading || companyLoading) {
     return <div>Loading...</div>;
   }
 
