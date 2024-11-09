@@ -216,13 +216,14 @@ const App = () => {
 <Route
   path="/ad-details/:companyId/:adId"
   element={
-    <PrivateRoute requiredRole="seller">
+    <PrivateRoute>
       <Layout currentItem="Anasayfa">
         <AdDetails />
       </Layout>
     </PrivateRoute>
   }
 />
+
 
             <Route
               path="/myorders"
@@ -275,9 +276,17 @@ const App = () => {
       </Layout>
     </PrivateRoute>
   }
-/>
+/><Route
+  path="/dashboard"
+  element={
+    <PrivateRoute allowNoCompany={false}> {/* Şirket bilgisi zorunlu */}
+      <Layout currentItem="Anasayfa">
+        <Dashboard />
+      </Layout>
+    </PrivateRoute>
+  }
+/>  
 
-            <Route path="/dashboard" element={<Layout currentItem="Anasayfa"><Dashboard /></Layout>} />
             <Route path="/support" element={<Layout currentItem="Destek"><Support /></Layout>} />
             <Route path="/logout" element={<Logout />} />
             <Route

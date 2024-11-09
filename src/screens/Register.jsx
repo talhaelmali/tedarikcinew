@@ -16,6 +16,7 @@ function Register() {
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const navigate = useNavigate();
     const logoUrl = useLogo();
     const { language, handleTranslatePage, setLanguage } = useLanguage();
@@ -81,6 +82,11 @@ function Register() {
 
     const handleRegister = async (event) => {
         event.preventDefault();
+        if (!termsAccepted) {
+            setError(language === 'tr' ? 'Lütfen koşulları kabul edin.' : 'Please accept the terms.');
+            return;
+        }
+
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
@@ -209,6 +215,17 @@ function Register() {
                     <div className="mb-6">
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700">{language === 'tr' ? 'Şifre' : 'Password'}</label>
                         <input id="password" name="password" type="password" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder={language === 'tr' ? 'Şifre' : 'Password'} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <div className="flex items-start mb-6">
+                        <div className="flex items-center h-5">
+                            <input id="terms" name="terms" type="checkbox" className="h-4 w-4 text-[#2563EB] border-gray-300 rounded" checked={termsAccepted} onChange={() => setTermsAccepted(!termsAccepted)} />
+                        </div>
+                        <div className="ml-2 text-sm">
+                            <label htmlFor="terms" className="font-medium text-gray-700">
+                                {language === 'tr' ? 'Kişisel verilerimin kullanım amacı, toplandığı yerler, paylaşıldığı kişiler ve haklarımla ilgili ' : 'I have read about how my personal data will be used, collected, shared, and my rights.'}
+                                <a href="https://firebasestorage.googleapis.com/v0/b/ihale-6cb24.appspot.com/o/CADERK%20LTD.%20S%CC%A7TI%CC%87.-%20U%CC%88YELI%CC%87K%20SO%CC%88ZLES%CC%A7ME.docx?alt=media&token=a8c54436-3d1a-4da6-80f2-b6be64457732" className="text-[#2563EB] hover:text-[#2563EB]">{language === 'tr' ? 'bilgilendirmeyi' : 'details'}</a> {language === 'tr' ? 'okudum.' : '.'}
+                            </label>
+                        </div>
                     </div>
                     <button type="submit" className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#2563EB]">
                         {language === 'tr' ? 'Kayıt Ol' : 'Register'}

@@ -144,6 +144,63 @@ const AdDetails = () => {
   
     return () => unsubscribeAd();
   }, [adId, companyId, currentUser]);
+
+  useEffect(() => {
+    const fetchAdData = async () => {
+      try {
+        const adRef = doc(db, 'companies', companyId, 'ads', adId);
+        const adSnap = await getDoc(adRef);
+
+        if (!adSnap.exists()) {
+          Swal.fire({
+            icon: 'error',
+            title: 'İlan Bulunamadı',
+            text: 'Bu ilan mevcut değil.',
+          }).then(() => navigate('/ads'));
+          return;
+        }
+
+        setAdData(adSnap.data());
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching ad data:', error);
+      }
+    };
+
+    const fetchUserCompany = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const companyRef = doc(db, 'companies', user.uid);
+        const companySnap = await getDoc(companyRef);
+        setUserCompany(companySnap.exists() ? companySnap.data() : null);
+      }
+    };
+
+    fetchAdData();
+    fetchUserCompany();
+  }, [companyId, adId, navigate]);
+
+  useEffect(() => {
+    if (!isLoading && adData && userCompany) {
+      const isOwner = userCompany.id === companyId;
+      const isSellerConfirmed = userCompany.isSellerConfirmed === 'yes';
+
+      // Redirect if user is not the owner, has an unconfirmed seller account, and is viewing another company's ad
+      if (!isOwner && !isSellerConfirmed) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Erişim Engellendi!',
+          text: 'Satıcı profiliniz henüz onaylanmamış.',
+        }).then(() => navigate('/dashboard'));
+      }
+    }
+  }, [adData, isLoading, userCompany, companyId, navigate]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+
   
   
 
