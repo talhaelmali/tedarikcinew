@@ -163,9 +163,10 @@ const AdDetails = () => {
         }
 
         setAdData(adSnap.data());
-        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching ad data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -182,12 +183,11 @@ const AdDetails = () => {
     fetchUserCompany();
   }, [companyId, adId, navigate]);
 
-  useEffect(() => {
-    if (!isLoading && adData && userCompany) {
+  seEffect(() => {
+    if (!loading && adData && userCompany) {
       const isOwner = userCompany.id === companyId;
       const isSellerConfirmed = userCompany.isSellerConfirmed === 'yes';
 
-      // Redirect if user is not the owner, has an unconfirmed seller account, and is viewing another company's ad
       if (!isOwner && !isSellerConfirmed) {
         Swal.fire({
           icon: 'warning',
@@ -196,7 +196,7 @@ const AdDetails = () => {
         }).then(() => navigate('/dashboard'));
       }
     }
-  }, [adData, isLoading, userCompany, companyId, navigate]);
+  }, [adData, loading, userCompany, companyId, navigate]);
 
   if (isLoading) {
     return <div>Loading...</div>;
