@@ -1,108 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from '../../firebaseConfig';
-import { getDocs, collection, query, where, doc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
-import swal from 'sweetalert';
 import { useNavigate, NavLink } from 'react-router-dom';
+import swal from 'sweetalert';
+import { useCompany } from '../../context/CompanyContext'; // useCompany hook'u import edildi
 
 function CompanyDetails() {
-  const [companyData, setCompanyData] = useState({
-    companyName: '',
-    companyTitle: '',
-    city: '',
-    district: '',
-    postalCode: '',
-    address: '',
-    signatureCircularVerified: false,
-    taxDocumentVerified: false,
-    activityCertificateVerified: false,
-    taxDocumentURL: '',
-  });
-  const [loading, setLoading] = useState(true);
+  const { company, loading } = useCompany(); // company ve loading değerlerini alıyoruz
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        const user = auth.currentUser;
-
-        if (!user) {
-          swal("Oturum açılmadı", "Şirket bilgilerini görüntülemek için giriş yapmalısınız.", "error").then(() => {
-            navigate('/login');
-          });
-          return;
-        }
-
-        const userUid = user.uid;
-
-        // Admin sorgusu
-        const companiesRef = collection(db, "companies");
-        const adminQuery = query(companiesRef, where("adminUserId", "==", userUid));
-        const adminSnapshot = await getDocs(adminQuery);
-
-        if (!adminSnapshot.empty) {
-          const company = adminSnapshot.docs[0].data();
-          setCompanyData({
-            companyName: company.companyName || '',
-            companyTitle: company.companyTitle || '',
-            city: company.city || '',
-            district: company.district || '',
-            postalCode: company.postalCode || '',
-            address: company.address || '',
-            signatureCircularVerified: company.signatureCircularVerified ?? false,
-            taxDocumentVerified: company.taxDocumentVerified ?? false,
-            activityCertificateVerified: company.activityCertificateVerified ?? false,
-            taxDocumentURL: company.taxDocumentURL || ''
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Üyelik kontrolü
-        const membersRef = collection(db, "members");
-        const memberQuery = query(membersRef, where("userId", "==", userUid));
-        const memberSnapshot = await getDocs(memberQuery);
-
-        if (!memberSnapshot.empty) {
-          const companyId = memberSnapshot.docs[0].data().companyId;
-          const companyDoc = doc(db, "companies", companyId);
-          const companySnapshot = await getDoc(companyDoc);
-
-          if (companySnapshot.exists()) {
-            const company = companySnapshot.data();
-            setCompanyData({
-              companyName: company.companyName || '',
-              companyTitle: company.companyTitle || '',
-              city: company.city || '',
-              district: company.district || '',
-              postalCode: company.postalCode || '',
-              address: company.address || '',
-              signatureCircularVerified: company.signatureCircularVerified ?? false,
-              taxDocumentVerified: company.taxDocumentVerified ?? false,
-              activityCertificateVerified: company.activityCertificateVerified ?? false,
-              taxDocumentURL: company.taxDocumentURL || ''
-            });
-            setLoading(false);
-            return;
-          }
-        }
-
-        swal("Şirket bulunamadı", "Bu kullanıcı ile ilişkilendirilmiş bir şirket bulunamadı.", "error").then(() => {
-          navigate('/dashboard');
-        });
-
-      } catch (error) {
-        console.error("Şirket bilgileri alınırken hata oluştu: ", error);
-        swal("Hata", error.message, "error");
-        setLoading(false);
-      }
-    };
-
-    fetchCompanyData();
-  }, [navigate]);
+    if (!loading && !company) {
+      swal("Şirket bulunamadı", "Bu kullanıcı ile ilişkilendirilmiş bir şirket bulunamadı.", "error").then(() => {
+        navigate('/dashboard');
+      });
+    }
+  }, [company, loading, navigate]);
 
   if (loading) {
     return <div>Yükleniyor...</div>;
+  }
+
+  if (!company) {
+    return null;
   }
 
   return (
@@ -129,7 +47,7 @@ function CompanyDetails() {
               id="companyName"
               name="companyName"
               type="text"
-              value={companyData.companyName}
+              value={company.companyName || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -140,7 +58,7 @@ function CompanyDetails() {
               id="companyTitle"
               name="companyTitle"
               type="text"
-              value={companyData.companyTitle}
+              value={company.companyTitle || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -151,7 +69,7 @@ function CompanyDetails() {
               id="city"
               name="city"
               type="text"
-              value={companyData.city}
+              value={company.city || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -162,7 +80,7 @@ function CompanyDetails() {
               id="district"
               name="district"
               type="text"
-              value={companyData.district}
+              value={company.district || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -173,7 +91,7 @@ function CompanyDetails() {
               id="postalCode"
               name="postalCode"
               type="text"
-              value={companyData.postalCode}
+              value={company.postalCode || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -184,7 +102,7 @@ function CompanyDetails() {
               id="address"
               name="address"
               type="text"
-              value={companyData.address}
+              value={company.address || ''}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -199,7 +117,7 @@ function CompanyDetails() {
               id="signatureCircularVerified"
               name="signatureCircularVerified"
               type="text"
-              value={companyData.signatureCircularVerified ? 'Evet' : 'Hayır'}
+              value={company.signatureCircularVerified ? 'Evet' : 'Hayır'}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -210,7 +128,7 @@ function CompanyDetails() {
               id="taxDocumentVerified"
               name="taxDocumentVerified"
               type="text"
-              value={companyData.taxDocumentVerified ? 'Evet' : 'Hayır'}
+              value={company.taxDocumentVerified ? 'Evet' : 'Hayır'}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -221,7 +139,7 @@ function CompanyDetails() {
               id="activityCertificateVerified"
               name="activityCertificateVerified"
               type="text"
-              value={companyData.activityCertificateVerified ? 'Evet' : 'Hayır'}
+              value={company.activityCertificateVerified ? 'Evet' : 'Hayır'}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
               disabled
             />
@@ -229,11 +147,11 @@ function CompanyDetails() {
         </div>
 
         {/* Belgeyi Görüntüleme ve İndirme */}
-        {companyData.taxDocumentURL && (
+        {company.taxDocumentURL && (
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700">Şirket Belgeleri</label>
             <a
-              href={companyData.taxDocumentURL}
+              href={company.taxDocumentURL}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-1 block w-full text-blue-500 hover:underline"
