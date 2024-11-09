@@ -5,7 +5,6 @@ import swal from 'sweetalert';
 import { useNavigate } from 'react-router-dom';
 import useLogo from '../hooks/useLogo';
 import { useLanguage } from '../context/LanguageContext';
-import Header from '../components/Header';
 import { Menu, Transition } from '@headlessui/react';
 
 function Login() {
@@ -17,8 +16,6 @@ function Login() {
     const navigate = useNavigate();
     const logoUrl = useLogo();
     const { language, handleTranslatePage, setLanguage } = useLanguage();
-
-    const Logo = 'Logo.png';
 
     useEffect(() => {
         if (language !== 'tr') {
@@ -52,9 +49,71 @@ function Login() {
         return textNodes;
     };
 
+    // Firebase error message mapping for custom Turkish messages
+const getErrorMessage = (errorCode) => {
+    const errorMessages = {
+        'auth/invalid-email': 'Geçersiz e-posta adresi.',
+        'auth/user-disabled': 'Bu kullanıcı hesabı devre dışı bırakılmış.',
+        'auth/user-not-found': 'E-posta adresi bulunamadı.',
+        'auth/wrong-password': 'E-posta veya şifre yanlış.',
+        'auth/email-already-in-use': 'Bu e-posta adresi zaten kullanılıyor.',
+        'auth/operation-not-allowed': 'Bu işlem şu anda izin verilmiyor.',
+        'auth/weak-password': 'Şifre çok zayıf, lütfen daha güçlü bir şifre kullanın.',
+        'auth/invalid-credential': 'Geçersiz kimlik bilgileri.',
+        'auth/account-exists-with-different-credential': 'Bu e-posta adresi farklı bir kimlik bilgisiyle zaten kullanılıyor.',
+        'auth/invalid-verification-code': 'Geçersiz doğrulama kodu.',
+        'auth/invalid-verification-id': 'Geçersiz doğrulama kimliği.',
+        'auth/requires-recent-login': 'Bu işlemi gerçekleştirmek için tekrar giriş yapmanız gerekiyor.',
+        'auth/credential-already-in-use': 'Bu kimlik bilgisi zaten başka bir hesapta kullanılıyor.',
+        'auth/invalid-password': 'Geçersiz şifre.',
+        'auth/user-token-expired': 'Kullanıcı oturumu süresi doldu, lütfen tekrar giriş yapın.',
+        'auth/network-request-failed': 'Ağ hatası oluştu. Lütfen internet bağlantınızı kontrol edin.',
+        'auth/too-many-requests': 'Çok fazla giriş denemesi yapıldı. Lütfen bir süre sonra tekrar deneyin.',
+        'auth/popup-closed-by-user': 'Giriş penceresi kullanıcı tarafından kapatıldı.',
+        'auth/cancelled-popup-request': 'Önceki oturum açma işlemi devam ediyor.',
+        'auth/popup-blocked': 'Tarayıcınız açılır pencereyi engelledi.',
+        'auth/app-not-authorized': 'Bu uygulama kimlik doğrulama kullanmak için yetkilendirilmemiş.',
+        'auth/unauthorized-domain': 'Bu alan adı, kimlik doğrulama işlemi için yetkilendirilmemiş.',
+        'auth/invalid-api-key': 'Geçersiz API anahtarı.',
+        'auth/app-deleted': 'Uygulama Firebase projesinden silindi.',
+        'auth/invalid-user-token': 'Geçersiz kullanıcı oturumu. Lütfen tekrar giriş yapın.',
+        'auth/user-mismatch': 'Bu kimlik bilgisi farklı bir kullanıcıya ait.',
+        'auth/session-cookie-expired': 'Oturum çerezi süresi doldu. Lütfen tekrar giriş yapın.',
+        'auth/invalid-phone-number': 'Geçersiz telefon numarası.',
+        'auth/missing-phone-number': 'Telefon numarası eksik.',
+        'auth/quota-exceeded': 'Kimlik doğrulama kotası aşıldı. Lütfen daha sonra tekrar deneyin.',
+        'auth/unverified-email': 'E-posta doğrulanmadı. Lütfen e-postanızı doğrulayın.',
+        'auth/expired-action-code': 'Bu işlem kodunun süresi doldu.',
+        'auth/invalid-action-code': 'Geçersiz işlem kodu.',
+        'auth/invalid-message-payload': 'Geçersiz mesaj içerik yapısı.',
+        'auth/email-change-needs-verification': 'E-posta değişikliği için doğrulama gerekli.',
+        'auth/invalid-continue-uri': 'Geçersiz devam bağlantısı URI’si.',
+        'auth/missing-continue-uri': 'Devam bağlantısı URI’si eksik.',
+        'auth/invalid-provider-id': 'Geçersiz sağlayıcı kimliği.',
+        'auth/invalid-recipient-email': 'Geçersiz alıcı e-posta adresi.',
+        'auth/invalid-sender': 'Geçersiz gönderici adresi.',
+        'auth/missing-android-pkg-name': 'Android paket ismi eksik.',
+        'auth/missing-continue-uri': 'Devam URI’si eksik.',
+        'auth/missing-ios-bundle-id': 'iOS paket kimliği eksik.',
+        'auth/unauthorized-continue-uri': 'Devam bağlantısı yetkili değil.',
+        'auth/invalid-tenant-id': 'Geçersiz kiracı kimliği.',
+        'auth/multi-factor-auth-required': 'Çok faktörlü kimlik doğrulama gerekli.',
+        'auth/maximum-second-factor-count-exceeded': 'İzin verilen en fazla ikinci faktör sayısına ulaşıldı.',
+        'auth/unsupported-first-factor': 'Desteklenmeyen birincil faktör.',
+        'auth/unsupported-persistence-type': 'Desteklenmeyen devamlılık türü.',
+        'auth/timeout': 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.',
+        'auth/missing-multi-factor-info': 'Çok faktörlü kimlik doğrulama bilgisi eksik.',
+        'auth/invalid-multi-factor-session': 'Geçersiz çok faktörlü oturum.',
+        'auth/missing-multi-factor-session': 'Çok faktörlü oturum eksik.',
+        'auth/missing-phone-info': 'Telefon bilgisi eksik.',
+        'auth/unverified-application': 'Uygulama doğrulanmadı.',
+    };
+    return errorMessages[errorCode] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+};
+
+
     const handleLogin = async (event) => {
         event.preventDefault();
-
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             swal("Giriş başarılı", "Başarıyla giriş yaptınız!", "success");
@@ -68,9 +127,8 @@ function Login() {
             }
 
             navigate('/dashboard');
-
         } catch (error) {
-            swal("Hata", error.message, "error");
+            swal("Hata", getErrorMessage(error.code), "error");
         }
     };
 
@@ -81,7 +139,7 @@ function Login() {
             swal("Başarılı", "Şifre sıfırlama e-postası gönderildi!", "success");
             setShowModal(false);
         } catch (error) {
-            swal("Hata", error.message, "error");
+            swal("Hata", getErrorMessage(error.code), "error");
         }
     };
 
@@ -98,7 +156,7 @@ function Login() {
                     </a>
                 </div>
 
-                {/* Dil Değiştirme Alanı */}
+                {/* Language Switcher */}
                 <Menu as="div" className="relative inline-block text-left">
                     <div>
                         <Menu.Button className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700">
@@ -133,7 +191,7 @@ function Login() {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                     >
-                        {/* Dropdown Menüsü */}
+                        {/* Dropdown Menu */}
                         <Menu.Items className="origin-top-left absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                             <div className="py-1">
                                 <Menu.Item>
@@ -223,7 +281,6 @@ function Login() {
                             </button>
                         </div>
                     </div>
-                    {/* reCAPTCHA bileşeni kaldırıldı */}
                     <button
                         type="submit"
                         className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#2563EB] hover:bg-[#2563EB] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB]"
