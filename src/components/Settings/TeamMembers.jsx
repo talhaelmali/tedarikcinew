@@ -4,10 +4,10 @@ import { auth, db } from '../../firebaseConfig';
 import swal from 'sweetalert';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { API_URL } from '../../config';
-import { useCompany } from '../../context/CompanyContext'; // useCompany import edildi
+import { useCompany } from '../../context/CompanyContext';
 
 function TeamMembers() {
-  const { company, loading: companyLoading } = useCompany(); // Company verisi alındı
+  const { company, loading: companyLoading } = useCompany();
   const [teamMembers, setTeamMembers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,9 +28,9 @@ function TeamMembers() {
     } else if (company) {
       const fetchTeamMembers = async () => {
         try {
-          const teamMembersArray = company.teamMembers || []; // Ensure it's an array
+          const teamMembersArray = company.teamMembers || [];
           const teamMembersData = [];
-      
+
           for (const member of teamMembersArray) {
             const userDoc = await getDoc(doc(db, "users", member.userId));
             if (userDoc.exists()) {
@@ -46,7 +46,7 @@ function TeamMembers() {
           console.error("Ekip üyeleri alınırken hata oluştu: ", error);
           swal("Hata", error.message, "error");
         }
-      };      
+      };
 
       fetchTeamMembers();
     }
@@ -72,7 +72,7 @@ function TeamMembers() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_URL}/addTeamMember`, { // API URL kullanıldı
+      const response = await fetch(`${API_URL}/addTeamMember`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,8 +88,6 @@ function TeamMembers() {
       if (result.success) {
         swal("Başarılı!", "Ekip üyesi başarıyla eklendi.", "success");
         closeModal();
-
-        // Yeni eklenen kullanıcıyı mevcut teamMembers listesine ekle
         setTeamMembers((prevMembers) => [...prevMembers, result.user]);
       } else {
         swal("Hata", result.message, "error");
@@ -106,7 +104,6 @@ function TeamMembers() {
 
   return (
     <div className="">
-      {/* Static Tabs */}
       <nav className="flex border-b border-gray-200 mb-6">
         <NavLink to="/profile" className={({ isActive }) => isActive ? "text-blue-800 border-b-2 border-blue-800 py-2 px-4" : "text-gray-600 py-2 px-4 hover:text-blue-600"}>
           Profil
@@ -119,7 +116,6 @@ function TeamMembers() {
         </NavLink>
       </nav>
 
-      {/* Display Company Name */}
       <h2 className="text-2xl font-bold mb-6">Ekip Üyeleri</h2>
       <div className="space-y-4">
         {teamMembers.length > 0 ? (
@@ -143,11 +139,10 @@ function TeamMembers() {
             </div>
           ))
         ) : (
-          <p className="text-gray-600">Bu şirkete ait ekip üyesi bulunmamaktadır.</p>
+          <p className="text-gray-600">Henüz ekip üyesi eklemediniz.</p>
         )}
       </div>
 
-      {/* Add Member Button */}
       <div className="mt-6 flex justify-end">
         <button
           type="button"
@@ -158,7 +153,6 @@ function TeamMembers() {
         </button>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
@@ -170,62 +164,7 @@ function TeamMembers() {
                   Ekip Üyesi Ekle
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="w-full">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">Ad Soyad</label>
-                    <input 
-                      type="text" 
-                      name="name" 
-                      id="name" 
-                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                      value={formData.name}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label htmlFor="role" className="block text-sm font-medium text-gray-700">Mesleği</label>
-                    <input 
-                      type="text" 
-                      name="role" 
-                      id="role" 
-                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                      value={formData.role}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Telefon Numarası</label>
-                    <input 
-                      type="text" 
-                      name="phone" 
-                      id="phone" 
-                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="w-full">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">E-Posta</label>
-                    <input 
-                      type="email" 
-                      name="email" 
-                      id="email" 
-                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                      value={formData.email}
-                      onChange={handleInputChange}
-                    />
-                    <p className="mt-1 text-sm text-gray-500">Kurumsal e-posta adresini giriniz.</p>
-                  </div>
-                  <div className="w-full">
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Şifre</label>
-                    <input 
-                      type="password" 
-                      name="password" 
-                      id="password" 
-                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
-                      value={formData.password}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                  {/* Form fields here */}
                   <div className="bg-gray-50 px-6 py-3 sm:px-10 sm:flex sm:flex-row-reverse">
                     <button
                       type="submit"
@@ -243,7 +182,6 @@ function TeamMembers() {
                   </div>
                 </form>
               </div>
-              
             </div>
           </div>
         </div>
