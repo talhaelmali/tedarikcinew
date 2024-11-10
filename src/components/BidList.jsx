@@ -2,7 +2,7 @@ import React from 'react';
 import { StarIcon as FilledStarIcon, StarIcon as OutlineStarIcon } from '@heroicons/react/20/solid';
 import { useCompany } from '../context/CompanyContext';
 
-const BidList = ({ bids, bidderRatings, handleAcceptBid, isUserAdmin, adData, maskCompanyName, handleBidClick, isUserAdminOrMember }) => {
+const BidList = ({ bids, bidderRatings, handleAcceptBid, adData, maskCompanyName, handleBidClick }) => {
   const { company } = useCompany();
 
   const renderStars = (rating) => {
@@ -26,19 +26,23 @@ const BidList = ({ bids, bidderRatings, handleAcceptBid, isUserAdmin, adData, ma
     );
   };
 
-  const lowestBid = bids.length > 0 ? bids.reduce((min, bid) => bid.bidAmount < min.bidAmount ? bid : min, bids[0]) : null;
+  // En düşük teklifi bul
+  const lowestBid = bids.length > 0 ? bids.reduce((min, bid) => (bid.bidAmount < min.bidAmount ? bid : min), bids[0]) : null;
+
+  // Kullanıcı admin veya takım üyesi mi kontrol et
+  const isUserAdminOrMember = company && (company.adminUserId === auth.currentUser?.uid || company.teamMembers?.some(member => member.userId === auth.currentUser?.uid));
 
   const userCompanyBids = company ? bids.filter(bid => bid.bidderCompanyId === company.id) : [];
 
   return (
     <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
       <h3 className="text-lg leading-6 font-medium text-gray-900">
-        {adData.adType === 'Kapalı Usül Teklif' && !isUserAdmin ? 'Gönderdiğim Teklifler' : adData.adType === 'Kapalı Usül Teklif' ? 'Gelen Teklifler' : 'Gelen En Düşük Teklif'}
+        {adData.adType === 'Kapalı Usül Teklif' && !isUserAdminOrMember ? 'Gönderdiğim Teklifler' : adData.adType === 'Kapalı Usül Teklif' ? 'Gelen Teklifler' : 'Gelen En Düşük Teklif'}
       </h3>
       
       <div className="mt-4">
         {adData.adType === "Kapalı Usül Teklif" ? (
-          isUserAdmin ? (
+          isUserAdminOrMember ? (
             bids.length > 0 && bids.map(bid => (
               <div key={bid.id} className="md:flex max-w-[1162px] box-shadow-md rounded-lg">
                 <div className='flex w-full gap-3 p-4'>
@@ -66,7 +70,7 @@ const BidList = ({ bids, bidderRatings, handleAcceptBid, isUserAdmin, adData, ma
                     </div>
                   </div>
                 </div>
-                {isUserAdmin && (
+                {isUserAdminOrMember && (
                   <div className='w-full md:w-[133px] text-[#2563EB] text-sm font-medium border-l-2 py-[17px] flex justify-center items-center'>
                     <button
                       className="inline-flex justify-center rounded-md border border-transparent py-1 px-2 text-xs font-medium text-[#2563EB] hover:bg-gray-200"
