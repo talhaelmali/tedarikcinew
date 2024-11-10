@@ -28,9 +28,10 @@ function TeamMembers() {
     } else if (company) {
       const fetchTeamMembers = async () => {
         try {
-          const teamMembersArray = company.teamMembers || [];
+          // Ensure teamMembersArray is an array, even if `company.teamMembers` is null or undefined.
+          const teamMembersArray = Array.isArray(company.teamMembers) ? company.teamMembers : [];
           const teamMembersData = [];
-
+      
           for (const member of teamMembersArray) {
             const userDoc = await getDoc(doc(db, "users", member.userId));
             if (userDoc.exists()) {
@@ -47,6 +48,7 @@ function TeamMembers() {
           swal("Hata", error.message, "error");
         }
       };
+      
 
       fetchTeamMembers();
     }
