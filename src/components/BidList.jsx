@@ -1,10 +1,8 @@
 import React from 'react';
 import { StarIcon as FilledStarIcon, StarIcon as OutlineStarIcon } from '@heroicons/react/20/solid';
 import { useCompany } from '../context/CompanyContext';
-import { auth } from '../firebaseConfig';
 
-
-const BidList = ({ bids, bidderRatings, handleAcceptBid, adData, maskCompanyName, handleBidClick }) => {
+const BidList = ({ bids, bidderRatings, handleAcceptBid, isUserAdmin, adData, maskCompanyName, handleBidClick, isUserAdminOrMember }) => {
   const { company } = useCompany();
 
   const renderStars = (rating) => {
@@ -28,11 +26,7 @@ const BidList = ({ bids, bidderRatings, handleAcceptBid, adData, maskCompanyName
     );
   };
 
-  // En düşük teklifi bul
-  const lowestBid = bids.length > 0 ? bids.reduce((min, bid) => (bid.bidAmount < min.bidAmount ? bid : min), bids[0]) : null;
-
-  // Kullanıcı admin veya takım üyesi mi kontrol et
-  const isUserAdminOrMember = company && (company.adminUserId === auth.currentUser?.uid || company.teamMembers?.some(member => member.userId === auth.currentUser?.uid));
+  const lowestBid = bids.length > 0 ? bids.reduce((min, bid) => bid.bidAmount < min.bidAmount ? bid : min, bids[0]) : null;
 
   const userCompanyBids = company ? bids.filter(bid => bid.bidderCompanyId === company.id) : [];
 
