@@ -166,7 +166,62 @@ function TeamMembers() {
                   Ekip Üyesi Ekle
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Form fields here */}
+                  <div className="w-full">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">Ad Soyad</label>
+                    <input 
+                      type="text" 
+                      name="name" 
+                      id="name" 
+                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                      value={formData.name}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-700">Mesleği</label>
+                    <input 
+                      type="text" 
+                      name="role" 
+                      id="role" 
+                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                      value={formData.role}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Telefon Numarası</label>
+                    <input 
+                      type="text" 
+                      name="phone" 
+                      id="phone" 
+                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">E-Posta</label>
+                    <input 
+                      type="email" 
+                      name="email" 
+                      id="email" 
+                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                    <p className="mt-1 text-sm text-gray-500">Kurumsal e-posta adresini giriniz.</p>
+                  </div>
+                  <div className="w-full">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Şifre</label>
+                    <input 
+                      type="password" 
+                      name="password" 
+                      id="password" 
+                      className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                      value={formData.password}
+                      onChange={handleInputChange}
+                    />
+                  </div>
                   <div className="bg-gray-50 px-6 py-3 sm:px-10 sm:flex sm:flex-row-reverse">
                     <button
                       type="submit"
