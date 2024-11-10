@@ -1,6 +1,8 @@
 import React from 'react';
 import { StarIcon as FilledStarIcon, StarIcon as OutlineStarIcon } from '@heroicons/react/20/solid';
 import { useCompany } from '../context/CompanyContext';
+import { auth } from '../firebaseConfig';
+
 
 const BidList = ({ bids, bidderRatings, handleAcceptBid, adData, maskCompanyName, handleBidClick }) => {
   const { company } = useCompany();
