@@ -28,9 +28,9 @@ function TeamMembers() {
     } else if (company) {
       const fetchTeamMembers = async () => {
         try {
-          const teamMembersArray = company.teamMembers || [];
+          const teamMembersArray = company.teamMembers || []; // Ensure it's an array
           const teamMembersData = [];
-
+      
           for (const member of teamMembersArray) {
             const userDoc = await getDoc(doc(db, "users", member.userId));
             if (userDoc.exists()) {
@@ -46,7 +46,7 @@ function TeamMembers() {
           console.error("Ekip üyeleri alınırken hata oluştu: ", error);
           swal("Hata", error.message, "error");
         }
-      };
+      };      
 
       fetchTeamMembers();
     }
