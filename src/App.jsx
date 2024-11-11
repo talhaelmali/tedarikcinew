@@ -15,6 +15,8 @@ import Privacy from './screens/Privacy';
 import Terms from './screens/Terms';
 import Blogs from './screens/Blogs';
 import Announcements from './components/Announcements';
+import { useLocation } from 'react-router-dom';
+
  // LanguageProvider'ı import et
 
 
@@ -79,15 +81,18 @@ const Logout = () => {
 const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
   const { company, loading } = useCompany();
   const navigate = useNavigate();
+  const location = useLocation(); // Mevcut konumu takip et
   const auth = getAuth();
   const user = auth.currentUser;
   const { companyId: routeCompanyId } = useParams();
-  const [isAuthorized, setIsAuthorized] = useState(false); // Yetkilendirme durumunu takip etmek için
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if (loading) return; // loading tamamlanana kadar bekle
+    // Her yönlendirme veya konum değişiminde yetkilendirme durumunu sıfırla
+    setIsAuthorized(false);
 
-    // Kullanıcı giriş yapmadıysa yönlendirme
+    if (loading) return;
+
     if (!user) {
       Swal.fire({
         icon: 'info',
@@ -97,7 +102,6 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Şirket verisi zorunluysa ve yoksa yönlendirme
     if (!allowNoCompany && (!company || Object.keys(company).length === 0)) {
       Swal.fire({
         icon: 'info',
@@ -107,7 +111,6 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Role-specific access checks
     if (requiredRole === 'buyer' && company?.isBuyerConfirmed !== 'yes') {
       Swal.fire({
         icon: 'warning',
@@ -126,7 +129,6 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // ownerOrSeller rolü için kontrol
     if (
       requiredRole === 'ownerOrSeller' &&
       (routeCompanyId !== company?.id && company?.isSellerConfirmed !== 'yes')
@@ -141,14 +143,21 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
 
     // Tüm şartlar sağlandıysa yetkilendirmeyi true olarak ayarla
     setIsAuthorized(true);
-  }, [company, requiredRole, navigate, loading, user, allowNoCompany, routeCompanyId]);
+  }, [
+    company,
+    requiredRole,
+    navigate,
+    loading,
+    user,
+    allowNoCompany,
+    routeCompanyId,
+    location.pathname, // Konum değişikliklerinde tetikle
+  ]);
 
-  // Loading işlemi veya yetkilendirme tamamlana kadar yalnızca yükleme göstergesi göster
   if (loading || !isAuthorized) {
     return <div>Loading...</div>;
   }
 
-  // Yetkilendirme tamamlandıktan sonra çocuk bileşeni render et
   return children;
 };
 
