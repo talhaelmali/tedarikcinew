@@ -7,6 +7,7 @@ import AdCard from './AdCard';
 import BuyerStats from './BuyerStats';
 import SalerStats from './SalerStats';
 import dayjs from 'dayjs';
+import { ArrowLongLeftIcon, ArrowLongRightIcon } from '@heroicons/react/20/solid';
 
 const db = getFirestore();
 
@@ -16,8 +17,10 @@ const CombinedDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('ilanlar');
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageMyAds, setCurrentPageMyAds] = useState(1);
   const [adsPerPage] = useState(5);
   const [totalAds, setTotalAds] = useState(0);
+  const [totalMyAds, setTotalMyAds] = useState(0);
 
   useEffect(() => {
     if (company) {
@@ -56,7 +59,7 @@ const CombinedDashboard = () => {
 
       return () => unsubscribe();
     }
-  }, [company, currentPage]);
+  }, [company, currentPage, currentPageMyAds]);
 
   const calculateEndDate = (createdAt, duration) => {
     if (!createdAt || !duration) return null;
@@ -71,18 +74,28 @@ const CombinedDashboard = () => {
 
   const updateAds = (adsData) => {
     const sortedAds = adsData.sort((a, b) => b.createdAt - a.createdAt);
-    setTotalAds(sortedAds.length);
-    setAds(sortedAds.slice((currentPage - 1) * adsPerPage, currentPage * adsPerPage));
+    const otherAds = sortedAds.filter(ad => ad.companyId !== company?.id);
+    const myAds = sortedAds.filter(ad => ad.companyId === company?.id);
+
+    setTotalAds(otherAds.length);
+    setTotalMyAds(myAds.length);
+
+    setAds({
+      otherAds: otherAds.slice((currentPage - 1) * adsPerPage, currentPage * adsPerPage),
+      myAds: myAds.slice((currentPageMyAds - 1) * adsPerPage, currentPageMyAds * adsPerPage),
+    });
     setLoading(false);
   };
 
-  const myAds = useMemo(() => ads.filter(ad => ad.companyId === company?.id), [ads, company]);
-  const otherAds = useMemo(() => ads.filter(ad => ad.companyId !== company?.id), [ads, company]);
-
   const totalPages = Math.ceil(totalAds / adsPerPage);
+  const totalMyAdsPages = Math.ceil(totalMyAds / adsPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+
+  const handleMyAdsPageChange = (pageNumber) => {
+    setCurrentPageMyAds(pageNumber);
   };
 
   if (companyLoading || loading) {
@@ -122,64 +135,103 @@ const CombinedDashboard = () => {
         </div>
 
         {selectedTab === 'ilanlar' && (
-          <ul role="list" className="divide-y divide-gray-200 mt-4">
-            {otherAds.length > 0 ? (
-              otherAds.map(ad => (
-                <AdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
-              ))
-            ) : (
-              <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+          <>
+            <ul role="list" className="divide-y divide-gray-200 mt-4">
+              {ads.otherAds.length > 0 ? (
+                ads.otherAds.map(ad => (
+                  <AdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
+                ))
+              ) : (
+                <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+              )}
+            </ul>
+
+            {/* Pagination for "İlanlar" */}
+            {totalPages > 1 && (
+              <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-4">
+                <div className="-mt-px flex w-0 flex-1">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className={`inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                    disabled={currentPage === 1}
+                  >
+                    Önceki
+                  </button>
+                </div>
+                <div className="hidden md:-mt-px md:flex">
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handlePageChange(i + 1)}
+                      className={`inline-flex items-center border-t-2 ${currentPage === i + 1 ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} px-4 pt-4 text-sm font-medium`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="-mt-px flex w-0 flex-1 justify-end">
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className={`inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                    disabled={currentPage === totalPages}
+                  >
+                    Sonraki
+                  </button>
+                </div>
+              </nav>
             )}
-          </ul>
+          </>
         )}
 
         {selectedTab === 'ilanlarim' && (
-          <ul role="list" className="divide-y divide-gray-200 mt-4">
-            {myAds.length > 0 ? (
-              myAds.map(ad => (
-                <BuyerAdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
-              ))
-            ) : (
-              <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+          <>
+            <ul role="list" className="divide-y divide-gray-200 mt-4">
+              {ads.myAds.length > 0 ? (
+                ads.myAds.map(ad => (
+                  <BuyerAdCard key={`${ad.companyId}-${ad.id}`} ad={ad} />
+                ))
+              ) : (
+                <p className="mt-4 text-sm text-gray-500">Henüz bir ilan yok.</p>
+              )}
+            </ul>
+
+            {/* Pagination for "İlanlarım" */}
+            {totalMyAdsPages > 1 && (
+              <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-4">
+                <div className="-mt-px flex w-0 flex-1">
+                  <button
+                    onClick={() => handleMyAdsPageChange(currentPageMyAds - 1)}
+                    className={`inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium ${currentPageMyAds === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                    disabled={currentPageMyAds === 1}
+                  >
+                    Önceki
+                  </button>
+                </div>
+                <div className="hidden md:-mt-px md:flex">
+                  {Array.from({ length: totalMyAdsPages }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleMyAdsPageChange(i + 1)}
+                      className={`inline-flex items-center border-t-2 ${currentPageMyAds === i + 1 ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} px-4 pt-4 text-sm font-medium`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="-mt-px flex w-0 flex-1 justify-end">
+                  <button
+                    onClick={() => handleMyAdsPageChange(currentPageMyAds + 1)}
+                    className={`inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium ${currentPageMyAds === totalMyAdsPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                    disabled={currentPageMyAds === totalMyAdsPages}
+                  >
+                    Sonraki
+                  </button>
+                </div>
+              </nav>
             )}
-          </ul>
+          </>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <nav className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-4">
-          <div className="-mt-px flex w-0 flex-1">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              className={`inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
-              disabled={currentPage === 1}
-            >
-              Önceki
-            </button>
-          </div>
-          <div className="hidden md:-mt-px md:flex">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => handlePageChange(i + 1)}
-                className={`inline-flex items-center border-t-2 ${currentPage === i + 1 ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} px-4 pt-4 text-sm font-medium`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-          <div className="-mt-px flex w-0 flex-1 justify-end">
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              className={`inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
-              disabled={currentPage === totalPages}
-            >
-              Sonraki
-            </button>
-          </div>
-        </nav>
-      )}
     </div>
   );
 };
