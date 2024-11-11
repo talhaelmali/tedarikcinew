@@ -81,10 +81,11 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
   const navigate = useNavigate();
   const auth = getAuth();
   const user = auth.currentUser;
-  const { companyId: routeCompanyId } = useParams(); // URL'den companyId'yi al
+  const { companyId: routeCompanyId } = useParams();
+  const [isAuthorized, setIsAuthorized] = useState(false); // Yetkilendirme durumunu takip etmek için
 
   useEffect(() => {
-    if (loading) return; // Loading işlemi bitene kadar bekle
+    if (loading) return; // loading tamamlanana kadar bekle
 
     // Kullanıcı giriş yapmadıysa yönlendirme
     if (!user) {
@@ -125,7 +126,7 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       return;
     }
 
-    // Yeni ownerOrSeller rolü için kontrol
+    // ownerOrSeller rolü için kontrol
     if (
       requiredRole === 'ownerOrSeller' &&
       (routeCompanyId !== company?.id && company?.isSellerConfirmed !== 'yes')
@@ -137,15 +138,18 @@ const PrivateRoute = ({ children, requiredRole, allowNoCompany = true }) => {
       }).then(() => navigate('/dashboard'));
       return;
     }
+
+    // Tüm şartlar sağlandıysa yetkilendirmeyi true olarak ayarla
+    setIsAuthorized(true);
   }, [company, requiredRole, navigate, loading, user, allowNoCompany, routeCompanyId]);
 
-  // Loading işlemi sırasında gösterilecek yüklenme bileşeni
-  if (loading) {
+  // Loading işlemi veya yetkilendirme tamamlana kadar yalnızca yükleme göstergesi göster
+  if (loading || !isAuthorized) {
     return <div>Loading...</div>;
   }
 
-  // Şartlar sağlanıyorsa içeriği render et
-  return !loading && user && (allowNoCompany || company) ? children : null;
+  // Yetkilendirme tamamlandıktan sonra çocuk bileşeni render et
+  return children;
 };
 
 
